@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Playlist Documentation - User guide for the Windows video and audio playlist manager">
+    <title>Documentation - Playlist</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <div class="container">
+            <div class="nav-brand"><a href="index.html" style="color: inherit; text-decoration: none;">Playlist</a></div>
+            <div class="nav-links">
+                <a href="doc.html">Documentation</a>
+                <a href="https://github.com/Ignyos/Playlist/releases/latest" class="btn-nav-download">Download</a>
+            </div>
+        </div>
+    </nav>
+    
+    <header>
+        <div class="container">
+            <h1>📖 Documentation</h1>
+            <p class="tagline">Everything you need to know to use Playlist</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section>
+            <h2>Getting Started</h2>
+            
+            <div class="doc-section">
+                <h3>Installation</h3>
+                <ol>
+                    <li>Download the latest installer from the <a href="https://github.com/Ignyos/Playlist/releases/latest">Releases page</a></li>
+                    <li>Run <code>PlaylistSetup-1.0.0.exe</code></li>
+                    <li>Follow the installation wizard</li>
+                    <li>Launch Playlist from the Start Menu or desktop shortcut</li>
+                </ol>
+                <p><strong>System Requirements:</strong></p>
+                <ul>
+                    <li>Windows 10 or Windows 11 (64-bit)</li>
+                    <li>.NET 9.0 Runtime (included in installer)</li>
+                    <li>2 GB RAM minimum</li>
+                    <li>100 MB disk space</li>
+                </ul>
+            </div>
+
+            <div class="doc-section">
+                <h3>First Launch</h3>
+                <p>When you first open Playlist, you'll see the main window with an empty playlist sidebar. You're ready to create your first playlist!</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Managing Playlists</h2>
+            
+            <div class="doc-section">
+                <h3>Creating a New Playlist</h3>
+                <ol>
+                    <li>Click <strong>File → New Playlist</strong> in the menu bar</li>
+                    <li>Enter a name for your playlist (e.g., "Action Movies", "Workout Music")</li>
+                    <li>Click <strong>Add Files/Folders</strong> to select media files</li>
+                    <li>Browse and select video or audio files from your computer</li>
+                    <li>Optionally, drag items to reorder them in your preferred sequence</li>
+                    <li>Click <strong>Save</strong> to create the playlist</li>
+                </ol>
+            </div>
+
+            <div class="doc-section">
+                <h3>Editing an Existing Playlist</h3>
+                <ol>
+                    <li>Right-click on a playlist in the sidebar</li>
+                    <li>Select <strong>Edit</strong> from the context menu</li>
+                    <li>Add or remove files as needed</li>
+                    <li>Click <strong>Save</strong> to apply changes</li>
+                </ol>
+                <p><strong>Note:</strong> When editing, the system intelligently preserves your customizations (renamed items, play counts, timestamps) for files that remain in the playlist.</p>
+            </div>
+
+            <div class="doc-section">
+                <h3>Deleting a Playlist</h3>
+                <ol>
+                    <li>Right-click on a playlist in the sidebar</li>
+                    <li>Select <strong>Remove</strong></li>
+                    <li>Confirm the deletion when prompted</li>
+                </ol>
+                <p><strong>Note:</strong> Deleting a playlist does not delete the actual media files from your computer.</p>
+            </div>
+
+            <div class="doc-section">
+                <h3>Organizing Playlists</h3>
+                <p>Use the hamburger menu (☰) next to the search box to sort playlists:</p>
+                <ul>
+                    <li><strong>Sort by Name:</strong> A-Z or Z-A (default: A-Z)</li>
+                    <li><strong>Sort by Created Date:</strong> Newest first or Oldest first</li>
+                    <li><strong>Sort by Last Played:</strong> Most recent first or Longest ago first</li>
+                </ul>
+                <p>Use the search box to quickly find playlists by name.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Playing Media</h2>
+            
+            <div class="doc-section">
+                <h3>Starting Playback</h3>
+                <p>There are several ways to start playing media:</p>
+                <ul>
+                    <li><strong>Double-click</strong> an item in the playlist to play from the beginning</li>
+                    <li><strong>Right-click → Play:</strong> Starts playback from the beginning</li>
+                    <li><strong>Right-click → Continue:</strong> Resumes from where you last stopped</li>
+                </ul>
+            </div>
+
+            <div class="doc-section">
+                <h3>Media Player Controls</h3>
+                <p>The media player window includes overlay controls that appear when you move your mouse and auto-hide after 3 seconds.</p>
+                
+                <h4>Buttons</h4>
+                <ul>
+                    <li><strong>Play/Pause (▶/⏸):</strong> Toggle playback</li>
+                    <li><strong>Stop (■):</strong> Stop playback and close the player</li>
+                    <li><strong>Full Screen (⛶):</strong> Toggle full-screen mode</li>
+                </ul>
+
+                <h4>Progress Bar</h4>
+                <ul>
+                    <li>Shows current playback position and total duration</li>
+                    <li>Click or drag to seek to any position in the video</li>
+                    <li>Displays current time and total duration on either side</li>
+                </ul>
+
+                <h4>Volume Control</h4>
+                <ul>
+                    <li>Drag the volume slider to adjust audio level</li>
+                    <li>Volume setting is remembered for future playback</li>
+                </ul>
+            </div>
+
+            <div class="doc-section">
+                <h3>Keyboard Shortcuts</h3>
+                <table class="shortcuts-table">
+                    <tr>
+                        <td><strong>Space</strong></td>
+                        <td>Play/Pause</td>
+                    </tr>
+                    <tr>
+                        <td><strong>F11</strong></td>
+                        <td>Toggle full-screen mode</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Escape</strong></td>
+                        <td>Exit full-screen mode or show controls</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="doc-section">
+                <h3>Full-Screen Mode</h3>
+                <p>Press <strong>F11</strong> or click the full-screen button to enter full-screen mode. The Windows taskbar will be hidden for an immersive viewing experience.</p>
+                <p>To exit full-screen mode:</p>
+                <ul>
+                    <li>Press <strong>Escape</strong></li>
+                    <li>Press <strong>F11</strong> again</li>
+                    <li>Click the exit full-screen button</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h2>Managing Playlist Items</h2>
+            
+            <div class="doc-section">
+                <h3>Renaming Items</h3>
+                <ol>
+                    <li>Right-click on an item in the playlist</li>
+                    <li>Select <strong>Rename</strong></li>
+                    <li>Enter a custom name (e.g., "Episode 5" instead of "video_5.mp4")</li>
+                    <li>Press Enter to save</li>
+                </ol>
+                <p><strong>Note:</strong> This only changes the display name in Playlist, not the actual filename.</p>
+            </div>
+
+            <div class="doc-section">
+                <h3>Removing Items</h3>
+                <ol>
+                    <li>Right-click on an item in the playlist</li>
+                    <li>Select <strong>Remove</strong></li>
+                    <li>The item is removed from the playlist</li>
+                </ol>
+                <p><strong>Note:</strong> This does not delete the file from your computer.</p>
+            </div>
+
+            <div class="doc-section">
+                <h3>Reordering Items</h3>
+                <p>Click and drag items to rearrange them in your preferred order. The new order is saved automatically.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Viewing History</h2>
+            
+            <div class="doc-section">
+                <p>To view your playback history:</p>
+                <ol>
+                    <li>Click <strong>File → History</strong></li>
+                    <li>View a chronological list of everything you've watched</li>
+                    <li>Each entry shows the playlist, item name, and when it was played</li>
+                </ol>
+            </div>
+        </section>
+
+        <section>
+            <h2>Supported Formats</h2>
+            
+            <div class="doc-section">
+                <p>Playlist uses VLC media player for playback, which supports a wide variety of formats including:</p>
+                
+                <h4>Video Formats</h4>
+                <p>MP4, MKV, AVI, MOV, WMV, FLV, WEBM, MPEG, MPG, M4V, 3GP, and many more</p>
+
+                <h4>Audio Formats</h4>
+                <p>MP3, WAV, FLAC, AAC, OGG, WMA, M4A, AIFF, OPUS, and many more</p>
+
+                <h4>Subtitle Formats</h4>
+                <p>SRT, SUB, ASS, SSA, VTT (automatically detected if in the same folder as the video)</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Troubleshooting</h2>
+            
+            <div class="doc-section">
+                <h3>Video won't play</h3>
+                <ul>
+                    <li>Ensure the file exists at the original location</li>
+                    <li>Check that the file format is supported</li>
+                    <li>Try playing the file in VLC media player directly to verify it's not corrupted</li>
+                </ul>
+            </div>
+
+            <div class="doc-section">
+                <h3>Controls not showing</h3>
+                <ul>
+                    <li>Move your mouse over the video window</li>
+                    <li>Press <strong>Escape</strong> to force controls to appear</li>
+                    <li>Controls auto-hide after 3 seconds of no mouse movement</li>
+                </ul>
+            </div>
+
+            <div class="doc-section">
+                <h3>Application crashes or errors</h3>
+                <ul>
+                    <li>Errors are automatically logged in the application database</li>
+                    <li>Check for updates at the <a href="https://github.com/Ignyos/Playlist/releases">Releases page</a></li>
+                    <li>Report issues on <a href="https://github.com/Ignyos/Playlist/issues">GitHub Issues</a></li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h2>Data Storage</h2>
+            
+            <div class="doc-section">
+                <p>All playlist data, settings, and history are stored locally in a SQLite database on your computer. No data is sent to the cloud or any external servers.</p>
+                <p><strong>Database Location:</strong> The database file is stored in the application's data directory.</p>
+                <p><strong>Backup:</strong> To backup your playlists, copy the database file to a safe location. You can restore it later by replacing the file.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Need More Help?</h2>
+            
+            <div class="doc-section">
+                <p>If you need additional assistance or want to report a bug:</p>
+                <ul>
+                    <li>Visit the <a href="https://github.com/Ignyos/Playlist">GitHub Repository</a></li>
+                    <li>Open an issue on <a href="https://github.com/Ignyos/Playlist/issues">GitHub Issues</a></li>
+                    <li>Check the <a href="https://github.com/Ignyos/Playlist/discussions">Discussions</a> for community help</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>Made with ❤️ by <a href="https://ignyos.com">Ignyos</a></p>
+        </div>
+    </footer>
+</body>
+</html>
