@@ -113,59 +113,69 @@ jobs:
         & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
       shell: pwsh
       
-    - name: Generate release notes
-      id: release_notes
-      run: |
-        $version = "${{ steps.version.outputs.VERSION }}"
-        $notes = @"
-        ## Playlist v$version
-        
-        ### 🎉 What's New
-        
-        - Video and audio playlist management
-        - Integrated VLC media player
-        - Auto-hiding overlay controls
-        - Full-screen mode with taskbar hiding
-        - Resume playback from saved timestamps
-        - Playback history tracking
-        - Search and sort playlists
-        - Drag-and-drop playlist reordering
-        
-        ### 📦 Installation
-        
-        **Windows Installer (Recommended):**
-        Download and run ``PlaylistSetup-$version.exe``
-        
-        **Portable Version:**
-        Download ``Playlist-$version-portable.zip`` and extract anywhere
-        
-        ### 📋 Requirements
-        
-        - Windows 10/11 (64-bit)
-        - .NET 9.0 Runtime (included in installer)
-        
-        ### 📖 Documentation
-        
-        Full documentation available at [playlist.ignyos.com](https://playlist.ignyos.com)
-        
-        ---
-        
-        **Full Changelog**: https://github.com/Ignyos/Playlist/commits/v$version
-        "@
-        
-        $notes | Out-File -FilePath release_notes.md -Encoding UTF8
-      shell: pwsh
+    - name: Get version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      shell: bash
       
     - name: Create Release
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: v${{ steps.version.outputs.VERSION }}
-        name: Playlist v${{ steps.version.outputs.VERSION }}
-        body_path: release_notes.md
-        draft: false
-        prerelease: false
-        files: |
-          ./output/PlaylistSetup-${{ steps.version.outputs.VERSION }}.exe
-          ./output/Playlist-${{ steps.version.outputs.VERSION }}-portable.zip
+      id: create_release
+      uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Playlist v${{ steps.version.outputs.VERSION }}
+        draft: false
+        prerelease: false
+        body: |
+          ## Playlist v${{ steps.version.outputs.VERSION }}
+          
+          ### 🎉 What's New
+          
+          - Video and audio playlist management
+          - Integrated VLC media player
+          - Auto-hiding overlay controls with fade animations
+          - Full-screen mode with taskbar hiding
+          - Resume playback from saved timestamps
+          - Playback history tracking
+          - Search and sort playlists
+          - Drag-and-drop playlist reordering
+          - Update checker via GitHub API
+          
+          ### 📦 Installation
+          
+          **Windows Installer (Recommended):**
+          Download and run `PlaylistSetup-${{ steps.version.outputs.VERSION }}.exe`
+          
+          **Portable Version:**
+          Download `Playlist-${{ steps.version.outputs.VERSION }}-portable.zip` and extract anywhere
+          
+          ### 📋 Requirements
+          
+          - Windows 10/11 (64-bit)
+          - .NET 9.0 Runtime (included in installer)
+          
+          ### 📖 Documentation
+          
+          Full documentation available at [playlist.ignyos.com](https://playlist.ignyos.com)
+          
+    - name: Upload Installer
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./output/PlaylistSetup-${{ steps.version.outputs.VERSION }}.exe
+        asset_name: PlaylistSetup-${{ steps.version.outputs.VERSION }}.exe
+        asset_content_type: application/octet-stream
+        
+    - name: Upload Portable
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./output/Playlist-${{ steps.version.outputs.VERSION }}-portable.zip
+        asset_name: Playlist-${{ steps.version.outputs.VERSION }}-portable.zip
+        asset_content_type: application/zip
