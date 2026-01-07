@@ -52,6 +52,13 @@ bld/
 *.db-shm
 *.db-wal
 
+# Build outputs
+publish/
+installer/
+
+# Temporary installer script
+installer.iss
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
