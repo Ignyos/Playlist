@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Playlist"
         mc:Ignorable="d"
-        Title="Playlist" Height="600" Width="900" MinHeight="400" MinWidth="600">
+        Title="Playlist" Height="600" Width="900" MinHeight="400" MinWidth="600"
+        Icon="Assets/icon.ico">
     <DockPanel>
         <!-- Menu Bar -->
         <Menu DockPanel.Dock="Top">

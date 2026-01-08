@@ -14,6 +14,11 @@ namespace Playlist.Views
         {
             InitializeComponent();
             _updateService = new UpdateService();
+            
+            // Show current version immediately
+            var currentVersion = _updateService.GetCurrentVersion();
+            CurrentVersionText.Text = $"Current version: {currentVersion}";
+            
             Loaded += UpdateCheckWindow_Loaded;
         }
 
@@ -44,7 +49,6 @@ namespace Playlist.Views
             if (result.IsUpdateAvailable)
             {
                 HeaderText.Text = "Update Available!";
-                StatusIcon.Text = "🎉";
                 StatusMessage.Text = $"A new version of Playlist is available!";
                 VersionInfo.Text = $"Current version: {result.CurrentVersion}\nLatest version: {result.LatestVersion}";
                 
@@ -54,7 +58,6 @@ namespace Playlist.Views
             else
             {
                 HeaderText.Text = "You're Up to Date!";
-                StatusIcon.Text = "✅";
                 StatusMessage.Text = "You are running the latest version of Playlist.";
                 VersionInfo.Text = $"Current version: {result.CurrentVersion}";
             }
@@ -66,9 +69,10 @@ namespace Playlist.Views
             ResultPanel.Visibility = Visibility.Visible;
             
             HeaderText.Text = "Unable to Check";
-            StatusIcon.Text = "⚠️";
             StatusMessage.Text = errorMessage;
-            VersionInfo.Text = string.Empty;
+            
+            var currentVersion = _updateService.GetCurrentVersion();
+            VersionInfo.Text = $"Current version: {currentVersion}";
         }
 
         private void DownloadButton_Click(object sender, RoutedEventArgs e)

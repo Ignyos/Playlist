@@ -30,10 +30,11 @@
                         VerticalAlignment="Center" 
                         HorizontalAlignment="Center"
                         Visibility="Visible">
-                <TextBlock Text="⏳" 
-                          FontSize="48" 
-                          HorizontalAlignment="Center" 
-                          Margin="0,0,0,10"/>
+                <TextBlock Name="CurrentVersionText"
+                          FontSize="14" 
+                          Foreground="#666"
+                          HorizontalAlignment="Center"
+                          Margin="0,0,0,20"/>
                 <TextBlock Text="Checking for updates..." 
                           FontSize="14" 
                           Foreground="#666"
@@ -44,10 +45,6 @@
             <StackPanel Name="ResultPanel" 
                         VerticalAlignment="Center"
                         Visibility="Collapsed">
-                <TextBlock Name="StatusIcon" 
-                          FontSize="48" 
-                          HorizontalAlignment="Center" 
-                          Margin="0,0,0,10"/>
                 <TextBlock Name="StatusMessage" 
                           FontSize="14" 
                           TextWrapping="Wrap"

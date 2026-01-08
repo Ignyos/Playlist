@@ -1,5 +1,9 @@
 # Playlist
 
+<p align="center">
+  <img src="src/Playlist/Assets/icon.svg" alt="Playlist Logo" width="128" height="128">
+</p>
+
 A Windows desktop application for managing and playing playlists of video and audio files with integrated VLC media player.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)

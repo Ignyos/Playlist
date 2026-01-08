@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="80.539162mm"
+   height="80.539162mm"
+   viewBox="0 0 80.539162 80.539162"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="icon.svg"
+   inkscape:version="1.3 (0e150ed6c4, 2023-07-21)"
+   inkscape:export-filename="icon.svg"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#999999"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="0.77529556"
+     inkscape:cx="181.86613"
+     inkscape:cy="187.67036"
+     inkscape:window-width="1920"
+     inkscape:window-height="1009"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1"
+     showguides="true" />
+  <defs
+     id="defs1" />
+  <g
+     id="layer1"
+     transform="translate(-90.487499,-136.52501)">
+    <path
+       id="circle3"
+       style="fill:#ff7f2a;stroke-width:0.264583"
+       class="st1"
+       d="M 169.40981 188.07431 L 159.88791 178.24029 L 110.51625 202.41711 C 110.98062 203.14068 111.589 204.04219 112.29754 205.06604 C 113.00607 206.0899 113.81501 207.23576 114.68137 208.44826 C 116.28856 210.69758 118.09448 213.17166 119.82059 215.52173 A 40.269581 40.269581 0 0 0 130.75688 217.06428 A 40.269581 40.269581 0 0 0 169.40981 188.07431 z " />
+    <path
+       id="path1"
+       style="fill:#f6a31a;stroke-width:0.264583"
+       class="st1"
+       d="M 130.75688 136.52501 A 40.269581 40.269581 0 0 0 90.487499 176.79438 A 40.269581 40.269581 0 0 0 119.82059 215.52173 C 118.09448 213.17166 116.28856 210.69758 114.68137 208.44826 C 113.81501 207.23576 113.00607 206.0899 112.29754 205.06604 C 111.589 204.04219 110.98062 203.14068 110.51625 202.41711 L 159.88791 178.24029 L 169.40981 188.07431 A 40.269581 40.269581 0 0 0 171.02677 176.79438 A 40.269581 40.269581 0 0 0 130.75688 136.52501 z " />
+    <g
+       id="g372"
+       transform="matrix(0.26458333,0,0,1.1757198,-101.30895,-234.3619)"
+       mask="none">
+      <path
+         class="st0"
+         d="m 800.59996,330.99633 c 0,0 0,40.78842 0,40.50281 L 987.2,350.93568 Z"
+         id="path370"
+         style="fill:#ffffff"
+         sodipodi:nodetypes="cccc" />
+    </g>
+  </g>
+</svg>
