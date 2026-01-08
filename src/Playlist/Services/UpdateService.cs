@@ -54,7 +54,7 @@ namespace Playlist.Services
             }
         }
 
-        private string GetCurrentVersion()
+        public string GetCurrentVersion()
         {
             var version = Assembly.GetExecutingAssembly().GetName().Version;
             return $"{version?.Major}.{version?.Minor}.{version?.Build}";
