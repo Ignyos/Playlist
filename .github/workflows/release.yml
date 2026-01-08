@@ -38,11 +38,8 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
       
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
-      
     - name: Publish
-      run: dotnet publish src/Playlist/Playlist.csproj --configuration Release --runtime win-x64 --self-contained --output ./publish --no-build /p:PublishSingleFile=false
+      run: dotnet publish src/Playlist/Playlist.csproj --configuration Release --runtime win-x64 --self-contained --output ./publish /p:PublishSingleFile=false
       
     - name: Create installer directory
       run: New-Item -ItemType Directory -Force -Path ./installer
