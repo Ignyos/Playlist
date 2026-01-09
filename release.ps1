@@ -128,9 +128,14 @@ if ($newVersion -eq $currentVersion) {
     try {
         Build-LocalInstaller -Version $localVersion -IsDevBuild $true
         Write-Host "`nLocal build complete!" -ForegroundColor $SuccessColor
+        
+        # Revert setup.iss changes
+        Write-Host "Reverting setup.iss..." -ForegroundColor $InfoColor
+        git checkout -- setup.iss 2>$null
     }
     catch {
         Write-Host "Build failed: $_" -ForegroundColor $ErrorColor
+        git checkout -- setup.iss 2>$null
         exit 1
     }
     
