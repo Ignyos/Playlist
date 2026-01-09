@@ -81,6 +81,16 @@ namespace Playlist.Services
                 {
                     playlist.LastPlayed = DateTime.Now;
                 }
+                
+                // Add history record
+                var history = new History
+                {
+                    PlaylistId = item.PlaylistId,
+                    PlaylistItemId = item.Id,
+                    TimeStamp = DateTime.Now
+                };
+                _dbContext.History.Add(history);
+                
                 await _dbContext.SaveChangesAsync();
 
                 MediaStarted?.Invoke(this, item);

@@ -31,7 +31,7 @@ A Windows desktop application for managing and playing playlists of video and au
 ### Option 1: Windows Installer (Recommended)
 
 1. Download the latest installer from [Releases](https://github.com/Ignyos/Playlist/releases)
-2. Run `PlaylistSetup-1.0.0.exe`
+2. Run `PlaylistSetup.exe`
 3. Follow the installation wizard
 4. Launch Playlist from the Start Menu
 

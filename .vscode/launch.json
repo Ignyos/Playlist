@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run Playlist (Clean & Build)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "clean-build",
+            "program": "${workspaceFolder}/src/Playlist/bin/Debug/net9.0-windows/Playlist.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/Playlist",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        {
+            "name": "Run Release Script",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "${workspaceFolder}/release.ps1",
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
