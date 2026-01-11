@@ -62,16 +62,19 @@ dotnet run
 - **Entity Framework Core** - ORM for database access
 - **SQLite** - Embedded database for local storage
 
+## Development
+
+For information on building, testing, and releasing the application, see the [Release Workflow](RELEASE_WORKFLOW.md) documentation.
+
 ## Roadmap
 
 ### Version 1.1
 - [ ] Keyboard shortcuts customization
 - [ ] Playlist import/export (M3U, PLS)
 - [ ] Theme customization
-- [ ] Multiple monitor support
 
 ### Version 2.0
-- [ ] Audio visualization
+- [ ] YouTube integration
 - [ ] Subtitle support customization
 - [ ] Advanced filtering and search
 - [ ] Playlist shuffle and repeat modes
