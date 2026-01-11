@@ -25,6 +25,7 @@ LicenseFile=LICENSE
 OutputDir=installer
 OutputBaseFilename=PlaylistSetup
 SetupIconFile=src\Playlist\Assets\icon.ico
+UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern

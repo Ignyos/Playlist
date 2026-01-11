@@ -4,6 +4,7 @@
         Title="Check for Updates" 
         Height="250" 
         Width="450"
+        Icon="/Assets/icon.ico"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="#F5F5F5">

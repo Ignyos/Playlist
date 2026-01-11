@@ -6,6 +6,34 @@
         Icon="/Assets/icon.ico"
         Closing="Window_Closing"
         KeyDown="Window_KeyDown">
+    <Window.Resources>
+        <!-- Media control button style that brightens icon on hover without background change -->
+        <Style x:Key="MediaButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="Transparent" BorderThickness="0">
+                            <ContentPresenter x:Name="ContentPresenter" 
+                                            HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ContentPresenter" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="White" BlurRadius="10" ShadowDepth="0" Opacity="1"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
     <Grid Name="MainGrid" Background="Black">
         <!-- Video View with controls as content -->
         <vlc:VideoView x:Name="VideoView">
@@ -64,12 +92,12 @@
                     <StackPanel Grid.Column="0" Orientation="Horizontal">
                         <Button Name="PlayPauseButton" Width="40" Height="40" Margin="0,0,5,0" 
                                 Click="PlayPause_Click" ToolTip="Play/Pause"
-                                Background="Transparent" BorderThickness="0">
+                                Style="{StaticResource MediaButtonStyle}">
                             <TextBlock Name="PlayPauseIcon" Text="▶" FontSize="18" Foreground="White"/>
                         </Button>
                         <Button Name="StopButton" Width="40" Height="40" Margin="0,0,5,0" 
                                 Click="Stop_Click" ToolTip="Stop"
-                                Background="Transparent" BorderThickness="0">
+                                Style="{StaticResource MediaButtonStyle}">
                             <TextBlock Text="■" FontSize="16" Foreground="White"/>
                         </Button>
                     </StackPanel>
@@ -96,7 +124,7 @@
                                 Margin="0,0,10,0"/>
                         <Button Name="FullScreenButton" Width="40" Height="40" 
                                 Click="FullScreen_Click" ToolTip="Full Screen (F11)"
-                                Background="Transparent" BorderThickness="0">
+                                Style="{StaticResource MediaButtonStyle}">
                             <TextBlock Name="FullScreenIcon" Text="⛶" FontSize="16" Foreground="White"/>
                         </Button>
                     </StackPanel>
