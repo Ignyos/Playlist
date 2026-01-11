@@ -68,33 +68,7 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         name: Playlist v${{ steps.version.outputs.VERSION }}
-        body: |
-          ## Playlist v${{ steps.version.outputs.VERSION }}
-          
-          ### 🎉 What's New
-          
-          - Video and audio playlist management
-          - Integrated VLC media player
-          - Auto-hiding overlay controls with fade animations
-          - Full-screen mode with taskbar hiding
-          - Resume playback from saved timestamps
-          - Playback history tracking
-          - Search and sort playlists
-          - Drag-and-drop playlist reordering
-          - Update checker via GitHub API
-          
-          ### 📦 Installation
-          
-          Download and run `PlaylistSetup.exe`
-          
-          ### 📋 Requirements
-          
-          - Windows 10/11 (64-bit)
-          - .NET 9.0 Runtime (included in installer)
-          
-          ### 📖 Documentation
-          
-          Full documentation available at [playlist.ignyos.com](https://playlist.ignyos.com)
+        body_path: RELEASE_NOTES.txt
         files: |
           ./installer/PlaylistSetup.exe
         draft: false
