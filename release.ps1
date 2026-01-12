@@ -213,6 +213,11 @@ catch {
     exit 1
 }
 
+# Copy release notes to fixed filename for GitHub Actions
+Write-Host "`nPreparing release notes for GitHub..." -ForegroundColor $InfoColor
+Copy-Item $diffFile "RELEASE_NOTES.txt" -Force
+Write-Host "Release notes copied to RELEASE_NOTES.txt" -ForegroundColor $SuccessColor
+
 # Commit changes
 Write-Host "`nCommitting changes..." -ForegroundColor $InfoColor
 git add .

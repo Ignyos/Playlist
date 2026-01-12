@@ -1,0 +1,32 @@
+# Playlist v1.0.1
+
+## 🎉 What's New
+
+### Playback History Improvements
+- Fixed history tracking to properly record playback events
+- History records now created automatically when media playback starts
+- Improved History window UI by removing redundant header
+
+## 📦 Installation
+
+Download and run `PlaylistSetup.exe`
+
+## 📋 Requirements
+
+- Windows 10/11 (64-bit)
+- .NET 9.0 Runtime (included in installer)
+
+## 📖 Documentation
+
+Full documentation available at [playlist.ignyos.com](https://playlist.ignyos.com)
+
+### For Developers
+- Added VS Code workspace configuration (`.vscode/launch.json` and `.vscode/tasks.json`)
+- Clean & build task for easier development workflow
+- PowerShell debugging support for release script
+- Simplified installer naming (`PlaylistSetup.exe` instead of versioned filenames)
+- Added comprehensive `release.ps1` script for streamlined version management and builds
+- Support for both development builds (timestamped installers) and release builds (versioned with git tags)
+- Automated diff generation for release notes
+- Branch-aware workflow with main branch tag creation
+- VS Code integration with debug and release script launch configurations
