@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -32,6 +33,10 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        
+        // Set title with version
+        var version = Assembly.GetExecutingAssembly().GetName().Version;
+        Title = $"Playlist v{version?.Major}.{version?.Minor}.{version?.Build}";
         
         _playlists = new ObservableCollection<PlaylistViewModel>();
         _playlistItems = new ObservableCollection<PlaylistItemViewModel>();
