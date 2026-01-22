@@ -1,11 +1,25 @@
-# Playlist v1.0.1
+# Playlist v1.1.0
 
 ## 🎉 What's New
 
-### Playback History Improvements
-- Fixed history tracking to properly record playback events
-- History records now created automatically when media playback starts
-- Improved History window UI by removing redundant header
+### Video Progress Tracking
+• Visual percentage pills show how much of each video has been watched
+• Video lengths are automatically detected on first playback
+• Smart resume: double-click a video to automatically continue from where you left off
+• Improved timestamp accuracy: progress is now saved every second (previously every 10 seconds)
+
+### Enhanced Playlist Creation
+• When adding a folder, the playlist name defaults to the folder name
+• Newly created playlists are automatically selected with the first item highlighted
+
+### UI/UX Improvements
+• Full-width hover effects: list item hover highlighting now spans the entire row
+• Added "Progress" and "Video" column headers to playlist items
+• Streamlined interface: removed redundant playlist name banner
+• Improved selection and hover colors with black text for readability
+• Removed unnecessary success messages for seamless user experience
+• Fixed cursor behavior: cursor now properly reappears when closing the media player
+• Fixed "Continue" option to work correctly from saved positions
 
 ## 📦 Installation
 
@@ -13,20 +27,9 @@ Download and run `PlaylistSetup.exe`
 
 ## 📋 Requirements
 
-- Windows 10/11 (64-bit)
-- .NET 9.0 Runtime (included in installer)
+• Windows 10/11 (64-bit)
+• .NET 9.0 Runtime (included in installer)
 
 ## 📖 Documentation
 
-Full documentation available at [playlist.ignyos.com](https://playlist.ignyos.com)
-
-### For Developers
-- Added VS Code workspace configuration (`.vscode/launch.json` and `.vscode/tasks.json`)
-- Clean & build task for easier development workflow
-- PowerShell debugging support for release script
-- Simplified installer naming (`PlaylistSetup.exe` instead of versioned filenames)
-- Added comprehensive `release.ps1` script for streamlined version management and builds
-- Support for both development builds (timestamped installers) and release builds (versioned with git tags)
-- Automated diff generation for release notes
-- Branch-aware workflow with main branch tag creation
-- VS Code integration with debug and release script launch configurations
+Full documentation available at [playlist.ignyos.com](https://playlist.ignyos.com/)
