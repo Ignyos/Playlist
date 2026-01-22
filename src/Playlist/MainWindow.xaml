@@ -9,17 +9,16 @@
         Icon="pack://application:,,,/Assets/icon.ico">
     <Window.Resources>
         <Style TargetType="ListBoxItem">
-            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
                         <Border Name="Border" Padding="5" SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                            <ContentPresenter />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="Border" Property="Background" Value="#73aaff"/>
-                                <Setter Property="Foreground" Value="Black"/>
+                                <Setter Property="Foreground" Value="White"/>
                             </Trigger>
                             <MultiTrigger>
                                 <MultiTrigger.Conditions>
@@ -110,15 +109,10 @@
 
             <!-- Main Panel - Playlist Items -->
             <DockPanel Grid.Column="2">
-                <!-- Column Headers -->
-                <Grid DockPanel.Dock="Top" Margin="10,10,10,5">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="Progress" FontWeight="SemiBold" Margin="10,0,10,0" Width="50"/>
-                    <TextBlock Grid.Column="1" Text="Video" FontWeight="SemiBold"/>
-                </Grid>
+                <!-- Playlist Name Banner -->
+                <Border DockPanel.Dock="Top" Background="White" Padding="15,8,15,8" BorderBrush="Black" BorderThickness="0,0,0,1">
+                    <TextBlock Name="PlaylistNameTextBlock" FontSize="18" FontWeight="SemiBold" Text="Select a playlist" />
+                </Border>
 
                 <!-- Playlist Items List -->
                 <ListBox Name="PlaylistItemsListBox" Margin="10,0,10,10" Background="White"
