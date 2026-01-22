@@ -9,6 +9,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using Microsoft.EntityFrameworkCore;
 using Playlist.Data;
 using Playlist.Services;
 using Playlist.ViewModels;
@@ -41,9 +42,18 @@ public partial class MainWindow : Window
         _playlists = new ObservableCollection<PlaylistViewModel>();
         _playlistItems = new ObservableCollection<PlaylistItemViewModel>();
         
-        // Ensure database is created and initialize media player service
+        // Ensure database is created and apply migrations
         var dbContext = new PlaylistDbContext();
-        dbContext.Database.EnsureCreated();
+        try
+        {
+            dbContext.Database.Migrate();
+        }
+        catch
+        {
+            // If migration fails (e.g., database already exists with different schema),
+            // try EnsureCreated as fallback
+            dbContext.Database.EnsureCreated();
+        }
         
         _mediaPlayerService = new MediaPlayerService(dbContext);
         _mediaPlayerService.MediaEnded += OnMediaEnded;
@@ -135,7 +145,8 @@ public partial class MainWindow : Window
                 Name = item.Name,
                 Path = item.Path,
                 LastPlayed = item.LastPlayed,
-                TimeStamp = item.TimeStamp
+                TimeStamp = item.TimeStamp,
+                Duration = item.Duration
             });
         }
         
@@ -156,7 +167,6 @@ public partial class MainWindow : Window
         
         if (_selectedPlaylist != null)
         {
-            PlaylistNameTextBlock.Text = _selectedPlaylist.Name;
             LoadPlaylistItems(_selectedPlaylist.Id);
             
             // Save selected playlist ID to settings
@@ -166,7 +176,6 @@ public partial class MainWindow : Window
         }
         else
         {
-            PlaylistNameTextBlock.Text = "Select a playlist";
             _playlistItems.Clear();
             
             // Clear selected playlist ID from settings
@@ -412,9 +421,21 @@ public partial class MainWindow : Window
             {
                 using var context = new PlaylistDbContext();
                 var service = new PlaylistService(context);
-                service.CreatePlaylist(window.PlaylistName, window.SelectedFiles.ToList());
+                var newPlaylist = service.CreatePlaylist(window.PlaylistName, window.SelectedFiles.ToList());
                 LoadPlaylists();
-                MessageBox.Show("Playlist created successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                
+                // Select the newly created playlist
+                var playlistToSelect = _playlists.FirstOrDefault(p => p.Id == newPlaylist.Id);
+                if (playlistToSelect != null)
+                {
+                    PlaylistsListBox.SelectedItem = playlistToSelect;
+                    
+                    // Select the first item if there are any items
+                    if (_playlistItems.Count > 0)
+                    {
+                        PlaylistItemsListBox.SelectedIndex = 0;
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -510,8 +531,6 @@ public partial class MainWindow : Window
                 }
                 
                 Log("[EditPlaylist] Smart merge complete!");
-                
-                MessageBox.Show("Playlist updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -545,8 +564,6 @@ public partial class MainWindow : Window
                 service.DeletePlaylist(_selectedPlaylist.Id);
                 LoadPlaylists();
                 _playlistItems.Clear();
-                PlaylistNameTextBlock.Text = "Select a playlist";
-                MessageBox.Show("Playlist removed successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -576,7 +593,12 @@ public partial class MainWindow : Window
         var item = PlaylistItemsListBox.SelectedItem as PlaylistItemViewModel;
         if (item == null) return;
 
-        PlayMedia(item, fromStart: true);
+        // If there's a saved timestamp, continue from where it left off
+        using var context = new PlaylistDbContext();
+        var dbItem = context.PlaylistItems.FirstOrDefault(i => i.Id == item.Id);
+        bool hasTimestamp = dbItem?.TimeStamp != null && dbItem.TimeStamp > 0;
+
+        PlayMedia(item, fromStart: !hasTimestamp);
     }
 
     private async void PlayMedia(PlaylistItemViewModel item, bool fromStart)
@@ -591,6 +613,7 @@ public partial class MainWindow : Window
 
             // Always create a new window instance (recreates after disposal)
             _mediaPlayerWindow = new MediaPlayerWindow(_mediaPlayerService!);
+            _mediaPlayerWindow.Closed += MediaPlayerWindow_Closed;
             _mediaPlayerWindow.Show();
             _mediaPlayerWindow.Activate();
 
@@ -652,8 +675,6 @@ public partial class MainWindow : Window
                 {
                     LoadPlaylistItems(_selectedPlaylist.Id);
                 }
-                
-                MessageBox.Show("Item renamed successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -684,7 +705,6 @@ public partial class MainWindow : Window
                 {
                     LoadPlaylistItems(_selectedPlaylist.Id);
                 }
-                MessageBox.Show("Item removed successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -776,12 +796,23 @@ public partial class MainWindow : Window
 
     private void OnMediaEnded(object? sender, Models.PlaylistItem e)
     {
-        // Media playback completed, could auto-play next item if desired
+        // Media playback completed, refresh the playlist to show updated progress
         Dispatcher.Invoke(() =>
         {
-            // Optionally: auto-play next item in playlist
-            // For now, just update the UI
+            if (_selectedPlaylist != null)
+            {
+                LoadPlaylistItems(_selectedPlaylist.Id);
+            }
         });
+    }
+
+    private void MediaPlayerWindow_Closed(object? sender, EventArgs e)
+    {
+        // Media player window closed, refresh the playlist to show updated progress
+        if (_selectedPlaylist != null)
+        {
+            LoadPlaylistItems(_selectedPlaylist.Id);
+        }
     }
 
     protected override void OnClosed(EventArgs e)
