@@ -115,16 +115,37 @@
                 </Border>
 
                 <!-- Playlist Items List -->
-                <ListBox Name="PlaylistItemsListBox" Margin="10" Background="White"
-                         DisplayMemberPath="DisplayText" MouseDoubleClick="PlaylistItem_DoubleClick"
+                <ListBox Name="PlaylistItemsListBox" Margin="10,0,10,10" Background="White"
+                         MouseDoubleClick="PlaylistItem_DoubleClick"
                          AllowDrop="True"
                          PreviewMouseLeftButtonDown="PlaylistItem_PreviewMouseLeftButtonDown"
                          MouseMove="PlaylistItem_MouseMove"
                          DragOver="PlaylistItem_DragOver"
                          Drop="PlaylistItem_Drop">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <!-- Progress Indicator Pill -->
+                                <Border Grid.Column="0" Width="50" Height="20" CornerRadius="10" 
+                                        Background="White" Margin="0,0,10,0"
+                                        BorderThickness="1" BorderBrush="Black">
+                                    <TextBlock Text="{Binding ProgressPercentage, StringFormat={}{0}%}" 
+                                               FontSize="10" 
+                                               HorizontalAlignment="Center" 
+                                               VerticalAlignment="Center"/>
+                                </Border>
+                                <!-- File Name -->
+                                <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
                     <ListBox.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Header="Play" Click="PlayItem_Click" />
+                            <MenuItem Header="Play From Beginning" Click="PlayItem_Click" />
                             <MenuItem Header="Continue" Click="ContinueItem_Click" />
                             <Separator />
                             <MenuItem Header="Rename" Click="RenameItem_Click" />

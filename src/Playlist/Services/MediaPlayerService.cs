@@ -64,14 +64,34 @@ namespace Playlist.Services
                 using var media = new Media(_libVLC, item.Path, FromType.FromPath);
                 _mediaPlayer.Media = media;
 
-                // If continuing, set the start time
+                // Start playback
+                _mediaPlayer.Play();
+
+                // Wait for media to start loading
+                await Task.Delay(100);
+                
+                // Capture duration if not already stored
+                if (!item.Duration.HasValue || item.Duration.Value == 0)
+                {
+                    var duration = _mediaPlayer.Length; // Duration in milliseconds
+                    if (duration > 0)
+                    {
+                        var dbItem = await _dbContext.PlaylistItems
+                            .FirstOrDefaultAsync(i => i.Id == item.Id);
+                        if (dbItem != null)
+                        {
+                            dbItem.Duration = duration;
+                            await _dbContext.SaveChangesAsync();
+                            item.Duration = duration; // Update the in-memory object too
+                        }
+                    }
+                }
+
+                // If continuing, set the start time after playback begins
                 if (continueFromTimestamp && item.TimeStamp.HasValue)
                 {
                     _mediaPlayer.Time = item.TimeStamp.Value * 1000; // Convert seconds to milliseconds
                 }
-
-                // Start playback
-                _mediaPlayer.Play();
 
                 // Update LastPlayed
                 item.LastPlayed = DateTime.Now;
@@ -193,8 +213,8 @@ namespace Playlist.Services
 
         private async void OnTimeChanged(object? sender, MediaPlayerTimeChangedEventArgs e)
         {
-            // Periodically save timestamp (every 10 seconds)
-            if (_currentItem != null && e.Time % 10000 < 500)
+            // Periodically save timestamp (every 1 second)
+            if (_currentItem != null && e.Time % 1000 < 500)
             {
                 var currentTimeSeconds = (int)(e.Time / 1000);
                 var item = await _dbContext.PlaylistItems

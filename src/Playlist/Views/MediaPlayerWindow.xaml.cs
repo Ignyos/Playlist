@@ -309,6 +309,9 @@ namespace Playlist.Views
 
         private async void Window_Closing(object sender, CancelEventArgs e)
         {
+            // Restore cursor visibility before closing
+            Mouse.OverrideCursor = null;
+            
             // Stop playback if playing
             if (_mediaPlayerService.IsPlaying)
             {
