@@ -4,7 +4,7 @@
   <img src="src/Playlist/Assets/icon.svg" alt="Playlist Logo" width="128" height="128">
 </p>
 
-A Windows desktop application for managing and playing playlists of video and audio files with integrated VLC media player.
+A Windows desktop application for managing and playing playlists of video files with integrated VLC media player.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![.NET](https://img.shields.io/badge/.NET-9.0-purple.svg)
@@ -62,23 +62,6 @@ dotnet run
 - **Entity Framework Core** - ORM for database access
 - **SQLite** - Embedded database for local storage
 
-## Development
-
-For information on building, testing, and releasing the application, see the [Release Workflow](RELEASE_WORKFLOW.md) documentation.
-
-## Roadmap
-
-### Version 1.1
-- [ ] Keyboard shortcuts customization
-- [ ] Playlist import/export (M3U, PLS)
-- [ ] Theme customization
-
-### Version 2.0
-- [ ] YouTube integration
-- [ ] Subtitle support customization
-- [ ] Advanced filtering and search
-- [ ] Playlist shuffle and repeat modes
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -88,12 +71,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [LibVLCSharp](https://github.com/videolan/libvlcsharp) - VLC media player integration
 - [VideoLAN](https://www.videolan.org/) - VLC media player
 - [Entity Framework Core](https://github.com/dotnet/efcore) - Database ORM
-
-## Support
-
-- **Website:** [playlist.ignyos.com](https://playlist.ignyos.com)
-- **Issues:** [GitHub Issues](https://github.com/Ignyos/Playlist/issues)
-- **Company:** [Ignyos](https://ignyos.com)
 
 ---
 

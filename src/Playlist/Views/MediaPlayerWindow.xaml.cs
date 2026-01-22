@@ -183,7 +183,7 @@ namespace Playlist.Views
 
         private void HideControlsTimer_Tick(object? sender, EventArgs e)
         {
-            if (!_isDraggingProgress && ControlsOverlay.Visibility == Visibility.Visible && !ControlsOverlay.IsMouseOver)
+            if (!_isDraggingProgress && !ControlsOverlay.IsMouseOver)
             {
                 HideControls();
             }
@@ -205,7 +205,7 @@ namespace Playlist.Views
                     _controlsVisible = true;
                 }
                 
-                Cursor = Cursors.Arrow;
+                Mouse.OverrideCursor = null;
                 _hideControlsTimer.Stop();
                 _hideControlsTimer.Start();
             });
@@ -227,7 +227,7 @@ namespace Playlist.Views
                     _controlsVisible = true;
                 }
                 
-                Cursor = Cursors.Arrow;
+                Mouse.OverrideCursor = null;
             });
         }
 
@@ -245,8 +245,10 @@ namespace Playlist.Views
                     fadeOut.Completed += (s, e) => ControlsOverlay.Visibility = Visibility.Collapsed;
                     ControlsOverlay.BeginAnimation(OpacityProperty, fadeOut);
                     _controlsVisible = false;
-                    Cursor = Cursors.None;
                 }
+                
+                // Always hide cursor when controls hide, even if controls are already hidden
+                Mouse.OverrideCursor = Cursors.None;
             });
         }
 
@@ -307,6 +309,9 @@ namespace Playlist.Views
 
         private async void Window_Closing(object sender, CancelEventArgs e)
         {
+            // Restore cursor visibility before closing
+            Mouse.OverrideCursor = null;
+            
             // Stop playback if playing
             if (_mediaPlayerService.IsPlaying)
             {

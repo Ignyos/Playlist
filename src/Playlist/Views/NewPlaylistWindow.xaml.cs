@@ -88,6 +88,17 @@ public partial class NewPlaylistWindow : Window
                     SelectedFiles.Add(file);
                 }
             }
+            
+            // If playlist name is empty or default, suggest folder name
+            if (string.IsNullOrWhiteSpace(PlaylistNameTextBox.Text) || 
+                PlaylistNameTextBox.Text == "New Playlist")
+            {
+                var folderName = Path.GetFileName(dialog.FolderName);
+                if (!string.IsNullOrWhiteSpace(folderName))
+                {
+                    PlaylistNameTextBox.Text = folderName;
+                }
+            }
         }
     }
 

@@ -6,7 +6,34 @@
         xmlns:local="clr-namespace:Playlist"
         mc:Ignorable="d"
         Title="Playlist" Height="600" Width="900" MinHeight="400" MinWidth="600"
-        Icon="Assets/icon.ico">
+        Icon="pack://application:,,,/Assets/icon.ico">
+    <Window.Resources>
+        <Style TargetType="ListBoxItem">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border Name="Border" Padding="5" SnapsToDevicePixels="True">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#73aaff"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                    <Condition Property="IsSelected" Value="False"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Border" Property="Background" Value="#c9deff"/>
+                                <Setter Property="Foreground" Value="Black"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
     <DockPanel>
         <!-- Menu Bar -->
         <Menu DockPanel.Dock="Top">
@@ -102,40 +129,42 @@
             <!-- Main Panel - Playlist Items -->
             <DockPanel Grid.Column="2">
                 <!-- Playlist Name Banner -->
-                <Border DockPanel.Dock="Top" Background="#E3F2FD" Padding="15" BorderBrush="#90CAF9" BorderThickness="0,0,0,1">
+                <Border DockPanel.Dock="Top" Background="White" Padding="15,8,15,8" BorderBrush="Black" BorderThickness="0,0,0,1">
                     <TextBlock Name="PlaylistNameTextBlock" FontSize="18" FontWeight="SemiBold" Text="Select a playlist" />
                 </Border>
 
                 <!-- Playlist Items List -->
-                <ListBox Name="PlaylistItemsListBox" Margin="10" Background="White"
-                         DisplayMemberPath="DisplayText" MouseDoubleClick="PlaylistItem_DoubleClick"
+                <ListBox Name="PlaylistItemsListBox" Margin="10,0,10,10" Background="White"
+                         MouseDoubleClick="PlaylistItem_DoubleClick"
                          AllowDrop="True"
                          PreviewMouseLeftButtonDown="PlaylistItem_PreviewMouseLeftButtonDown"
                          MouseMove="PlaylistItem_MouseMove"
                          DragOver="PlaylistItem_DragOver"
                          Drop="PlaylistItem_Drop">
-                    <ListBox.Resources>
-                        <Style TargetType="ListBoxItem">
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="ListBoxItem">
-                                        <Border Name="Border" Padding="2" SnapsToDevicePixels="true">
-                                            <ContentPresenter />
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsSelected" Value="true">
-                                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
-                                                <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </ListBox.Resources>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <!-- Progress Indicator Pill -->
+                                <Border Grid.Column="0" Width="50" Height="20" CornerRadius="10" 
+                                        Background="White" Margin="0,0,10,0"
+                                        BorderThickness="1" BorderBrush="Black">
+                                    <TextBlock Text="{Binding ProgressPercentage, StringFormat={}{0}%}" 
+                                               FontSize="10" 
+                                               HorizontalAlignment="Center" 
+                                               VerticalAlignment="Center"/>
+                                </Border>
+                                <!-- File Name -->
+                                <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
                     <ListBox.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Header="Play" Click="PlayItem_Click" />
+                            <MenuItem Header="Play From Beginning" Click="PlayItem_Click" />
                             <MenuItem Header="Continue" Click="ContinueItem_Click" />
                             <Separator />
                             <MenuItem Header="Rename" Click="RenameItem_Click" />

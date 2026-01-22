@@ -105,6 +105,9 @@ namespace Playlist.Migrations
                     b.Property<DateTime?>("DeleteDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<long?>("Duration")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("LastPlayed")
                         .HasColumnType("TEXT");
 

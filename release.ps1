@@ -148,28 +148,20 @@ if ($newVersion -notmatch '^\d+\.\d+\.\d+$') {
     exit 1
 }
 
-# Update version in csproj
-try {
-    Set-ProjectVersion -NewVersion $newVersion
-}
-catch {
-    Write-Host "Failed to update version: $_" -ForegroundColor $ErrorColor
-    exit 1
-}
-
-# Generate diff for release notes
+# Generate diff for release notes BEFORE making changes
 $timestamp = Get-Date -Format "yyyy-MM-dd-HH-mm"
 $diffFile = "rc_${newVersion}_${timestamp}.txt"
 Write-Host "`nGenerating diff for release notes..." -ForegroundColor $InfoColor
 
 # Get last tag, or use empty tree if no tags exist (first release)
-$lastTag = git describe --tags --abbrev=0 2>$null
+$lastTag = git describe --tags --abbrev=0 2>&1 | Where-Object { $_ -is [string] }
 if ($lastTag) {
     Write-Host "Comparing changes since $lastTag..." -ForegroundColor $InfoColor
-    git diff $lastTag..HEAD > $diffFile
+    git diff "$lastTag..HEAD" | Out-File -FilePath $diffFile -Encoding utf8
 } else {
     Write-Host "No previous tags found, showing all changes..." -ForegroundColor $InfoColor
-    git diff $(git hash-object -t tree /dev/null)..HEAD > $diffFile
+    $emptyTree = git hash-object -t tree /dev/null
+    git diff "$emptyTree..HEAD" | Out-File -FilePath $diffFile -Encoding utf8
 }
 
 Write-Host "`nDiff saved to $diffFile" -ForegroundColor $SuccessColor
@@ -182,22 +174,30 @@ Write-Host ""
 $choice = Read-Host "Continue with release? (y/[n])"
 
 if ($choice -notmatch '^y(es)?$') {
-    Revert-VersionChange -OriginalVersion $currentVersion
     Write-Host "Release cancelled" -ForegroundColor $WarningColor
+    # Remove the rc_ file since we're cancelling
+    if (Test-Path $diffFile) { Remove-Item $diffFile }
     exit 0
 }
 
 # Validate release notes file
 if (-not (Test-Path $diffFile)) {
     Write-Host "Release notes file not found: $diffFile" -ForegroundColor $ErrorColor
-    Revert-VersionChange -OriginalVersion $currentVersion
     exit 1
 }
 
 $releaseNotes = Get-Content $diffFile -Raw
 if ([string]::IsNullOrWhiteSpace($releaseNotes)) {
     Write-Host "Release notes file is empty. Please add release notes." -ForegroundColor $ErrorColor
-    Revert-VersionChange -OriginalVersion $currentVersion
+    exit 1
+}
+
+# Update version in csproj
+try {
+    Set-ProjectVersion -NewVersion $newVersion
+}
+catch {
+    Write-Host "Failed to update version: $_" -ForegroundColor $ErrorColor
     exit 1
 }
 
@@ -214,7 +214,9 @@ catch {
 }
 
 # Copy release notes to fixed filename for GitHub Actions
+Write-Host "`nPreparing release notes for GitHub..." -ForegroundColor $InfoColor
 Copy-Item $diffFile "RELEASE_NOTES.txt" -Force
+Write-Host "Release notes copied to RELEASE_NOTES.txt" -ForegroundColor $SuccessColor
 
 # Commit changes
 Write-Host "`nCommitting changes..." -ForegroundColor $InfoColor
