@@ -141,6 +141,27 @@
                          MouseMove="PlaylistItem_MouseMove"
                          DragOver="PlaylistItem_DragOver"
                          Drop="PlaylistItem_Drop">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <!-- Progress Indicator Pill -->
+                                <Border Grid.Column="0" Width="50" Height="20" CornerRadius="10" 
+                                        Background="White" Margin="0,0,10,0"
+                                        BorderThickness="1" BorderBrush="Black">
+                                    <TextBlock Text="{Binding ProgressPercentage, StringFormat={}{0}%}" 
+                                               FontSize="10" 
+                                               HorizontalAlignment="Center" 
+                                               VerticalAlignment="Center"/>
+                                </Border>
+                                <!-- File Name -->
+                                <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
                     <ListBox.ContextMenu>
                         <ContextMenu>
                             <MenuItem Header="Play From Beginning" Click="PlayItem_Click" />
