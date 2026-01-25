@@ -28,7 +28,8 @@ public partial class MainWindow : Window
     private PlaylistViewModel? _selectedPlaylist;
     private string _currentSort = "Name_Asc"; // Default sort
     private Point _dragStartPoint;
-    private InsertionAdorner? _insertionAdorner;
+    private ListBoxInsertionAdorner? _insertionAdorner;
+    private int _dragTargetIndex = -1; // Track which item index we're dragging over
     private MediaPlayerService? _mediaPlayerService;
     private MediaPlayerWindow? _mediaPlayerWindow;
 
@@ -331,22 +332,29 @@ public partial class MainWindow : Window
     {
         if (e.Data.GetDataPresent(typeof(PlaylistItemViewModel)))
         {
-            
-            // Show visual insertion indicator
             var listBox = sender as ListBox;
             if (listBox != null)
             {
                 var position = e.GetPosition(listBox);
-                var targetElement = listBox.InputHitTest(position) as DependencyObject;
+                int targetIndex = listBox.Items.Count; // Default to end of list
                 
-                if (targetElement != null)
+                // Find the item index at this position
+                for (int i = 0; i < listBox.Items.Count; i++)
                 {
-                    var targetItem = FindAncestor<ListBoxItem>(targetElement);
-                    if (targetItem != null)
+                    var container = listBox.ItemContainerGenerator.ContainerFromIndex(i) as ListBoxItem;
+                    if (container != null && container.IsVisible)
                     {
-                        ShowInsertionAdorner(targetItem, position);
+                        var containerBounds = container.TransformToVisual(listBox).TransformBounds(new Rect(0, 0, container.ActualWidth, container.ActualHeight));
+                        if (position.Y < containerBounds.Bottom)
+                        {
+                            targetIndex = i;
+                            break;
+                        }
                     }
                 }
+                
+                _dragTargetIndex = targetIndex;
+                ShowInsertionAdorner(listBox, targetIndex);
             }
         }
         else
@@ -363,47 +371,50 @@ public partial class MainWindow : Window
         if (e.Data.GetDataPresent(typeof(PlaylistItemViewModel)) && _selectedPlaylist != null)
         {
             var droppedItem = e.Data.GetData(typeof(PlaylistItemViewModel)) as PlaylistItemViewModel;
+            if (droppedItem == null) return;
             
-            // Find the target item at the drop position
-            var listBox = sender as ListBox;
-            if (listBox == null || droppedItem == null) return;
-
-            var targetElement = listBox.InputHitTest(e.GetPosition(listBox)) as DependencyObject;
-            if (targetElement == null) return;
-            
-            var targetListBoxItem = FindAncestor<ListBoxItem>(targetElement);
-            
-            if (targetListBoxItem == null) return;
-            
-            var target = listBox.ItemContainerGenerator.ItemFromContainer(targetListBoxItem) as PlaylistItemViewModel;
-
-            if (target != null && droppedItem.Id != target.Id)
+            try
             {
-                try
+                var listBox = sender as ListBox;
+                if (listBox == null) return;
+                
+                var items = _playlistItems.ToList();
+                var oldIndex = items.IndexOf(droppedItem);
+                
+                if (oldIndex == -1 || _dragTargetIndex < 0) return;
+                
+                // Clamp the target index to valid bounds
+                int newIndex = Math.Min(_dragTargetIndex, items.Count);
+                
+                // Adjust new index if dragging backwards (removing from earlier position)
+                if (oldIndex < newIndex)
                 {
-                    var items = _playlistItems.ToList();
-                    var oldIndex = items.IndexOf(droppedItem);
-                    var newIndex = items.IndexOf(target);
-
-                    if (oldIndex != -1 && newIndex != -1)
-                    {
-                        items.RemoveAt(oldIndex);
-                        items.Insert(newIndex, droppedItem);
-
-                        // Update ordinals and save
-                        var itemIds = items.Select(i => i.Id).ToList();
-                        using var context = new PlaylistDbContext();
-                        var service = new PlaylistService(context);
-                        service.ReorderPlaylistItems(_selectedPlaylist.Id, itemIds);
-
-                        // Reload to reflect changes
-                        LoadPlaylistItems(_selectedPlaylist.Id);
-                    }
+                    newIndex--;
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error reordering items: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                
+                // Only proceed if index actually changed
+                if (oldIndex == newIndex) return;
+                
+                // Remove from old position and insert at new position
+                items.RemoveAt(oldIndex);
+                items.Insert(newIndex, droppedItem);
+                
+                // Update the database
+                var itemIds = items.Select(i => i.Id).ToList();
+                using var context = new PlaylistDbContext();
+                var service = new PlaylistService(context);
+                service.ReorderPlaylistItems(_selectedPlaylist.Id, itemIds);
+                
+                // Reload to reflect changes
+                LoadPlaylistItems(_selectedPlaylist.Id);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error reordering items: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                _dragTargetIndex = -1;
             }
         }
     }
@@ -805,18 +816,14 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ShowInsertionAdorner(ListBoxItem targetItem, Point position)
+    private void ShowInsertionAdorner(ListBox listBox, int targetIndex)
     {
         RemoveInsertionAdorner();
         
-        var adornerLayer = AdornerLayer.GetAdornerLayer(targetItem);
+        var adornerLayer = AdornerLayer.GetAdornerLayer(listBox);
         if (adornerLayer != null)
         {
-            var bounds = VisualTreeHelper.GetDescendantBounds(targetItem);
-            var itemPosition = position.Y - targetItem.TranslatePoint(new Point(0, 0), PlaylistItemsListBox).Y;
-            var isTopHalf = itemPosition < bounds.Height / 2;
-        // No DbContext to dispose anymore - all are created and disposed per operation
-            _insertionAdorner = new InsertionAdorner(targetItem, isTopHalf);
+            _insertionAdorner = new ListBoxInsertionAdorner(listBox, targetIndex);
             adornerLayer.Add(_insertionAdorner);
         }
     }
@@ -944,30 +951,60 @@ public partial class MainWindow : Window
     }
 }
 
-// Adorner class for showing insertion point
-internal class InsertionAdorner : Adorner
+// Adorner class for showing insertion point on ListBox
+internal class ListBoxInsertionAdorner : Adorner
 {
-    private readonly bool _isTopHalf;
+    private readonly ListBox _listBox;
+    private readonly int _targetIndex;
 
-    public InsertionAdorner(UIElement adornedElement, bool isTopHalf) : base(adornedElement)
+    public ListBoxInsertionAdorner(ListBox listBox, int targetIndex) : base(listBox)
     {
-        _isTopHalf = isTopHalf;
+        _listBox = listBox;
+        _targetIndex = targetIndex;
         IsHitTestVisible = false;
     }
 
     protected override void OnRender(DrawingContext drawingContext)
     {
-        var bounds = VisualTreeHelper.GetDescendantBounds(AdornedElement);
-        var y = _isTopHalf ? 0 : bounds.Height;
-        
-        var pen = new Pen(Brushes.DodgerBlue, 2);
-        var point1 = new Point(0, y);
-        var point2 = new Point(bounds.Width, y);
-        
-        drawingContext.DrawLine(pen, point1, point2);
-        
-        // Draw small circles at the ends
-        drawingContext.DrawEllipse(Brushes.DodgerBlue, null, point1, 3, 3);
-        drawingContext.DrawEllipse(Brushes.DodgerBlue, null, point2, 3, 3);
+        // Handle case where target index is at the end of list
+        if (_targetIndex >= _listBox.Items.Count)
+        {
+            // Draw line at bottom of last item
+            var lastIndex = _listBox.Items.Count - 1;
+            var lastContainer = _listBox.ItemContainerGenerator.ContainerFromIndex(lastIndex) as ListBoxItem;
+            if (lastContainer == null) return;
+            
+            var lastBounds = lastContainer.TransformToVisual(_listBox).TransformBounds(
+                new Rect(0, 0, lastContainer.ActualWidth, lastContainer.ActualHeight));
+            
+            var pen = new Pen(Brushes.DodgerBlue, 2);
+            var point1 = new Point(0, lastBounds.Bottom);
+            var point2 = new Point(lastBounds.Width, lastBounds.Bottom);
+            
+            drawingContext.DrawLine(pen, point1, point2);
+            drawingContext.DrawEllipse(Brushes.DodgerBlue, null, point1, 3, 3);
+            drawingContext.DrawEllipse(Brushes.DodgerBlue, null, point2, 3, 3);
+        }
+        else
+        {
+            // Find the container at the target index
+            var targetContainer = _listBox.ItemContainerGenerator.ContainerFromIndex(_targetIndex) as ListBoxItem;
+            if (targetContainer == null) return;
+            
+            // Get the position of the target container relative to the adorner (ListBox)
+            var targetBounds = targetContainer.TransformToVisual(_listBox).TransformBounds(
+                new Rect(0, 0, targetContainer.ActualWidth, targetContainer.ActualHeight));
+            
+            // Draw line at the top of the target item
+            var pen = new Pen(Brushes.DodgerBlue, 2);
+            var point1 = new Point(0, targetBounds.Top);
+            var point2 = new Point(targetBounds.Width, targetBounds.Top);
+            
+            drawingContext.DrawLine(pen, point1, point2);
+            
+            // Draw small circles at the ends
+            drawingContext.DrawEllipse(Brushes.DodgerBlue, null, point1, 3, 3);
+            drawingContext.DrawEllipse(Brushes.DodgerBlue, null, point2, 3, 3);
+        }
     }
 }

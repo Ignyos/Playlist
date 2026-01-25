@@ -145,9 +145,15 @@ namespace Playlist.Views
             }
         }
 
-        private void Stop_Click(object sender, RoutedEventArgs e)
+        private async void Stop_Click(object sender, RoutedEventArgs e)
         {
-            // Close the window (cleanup will be handled by Window_Closing)
+            // Stop playback and save progress before closing the window
+            if (_mediaPlayerService.IsPlaying)
+            {
+                await _mediaPlayerService.StopAsync();
+            }
+            
+            // Now close the window (cleanup will be handled by Window_Closing)
             Close();
         }
 
