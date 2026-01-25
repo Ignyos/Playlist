@@ -24,7 +24,7 @@ namespace Playlist.Services
 
         public MediaPlayer Player => _mediaPlayer;
         public PlaylistItem? CurrentItem => _currentItem;
-        public bool IsPlaying => _mediaPlayer.IsPlaying;
+        public bool IsPlaying => !_disposed && _mediaPlayer.IsPlaying;
 
         public MediaPlayerService(PlaylistDbContext dbContext)
         {
@@ -124,7 +124,9 @@ namespace Playlist.Services
 
         public async Task StopAsync()
         {
-            if (_currentItem != null && _mediaPlayer.IsPlaying)
+            if (_disposed || _currentItem == null) return;
+            
+            if (_mediaPlayer.IsPlaying)
             {
                 // Save current timestamp
                 var currentTimeSeconds = (int)(_mediaPlayer.Time / 1000);
@@ -274,16 +276,27 @@ namespace Playlist.Services
         {
             if (_disposed) return;
 
+            _disposed = true; // Set this first to prevent any further access
+
             _mediaPlayer.Playing -= OnMediaPlaying;
             _mediaPlayer.EndReached -= OnMediaEnded;
             _mediaPlayer.EncounteredError -= OnMediaError;
             _mediaPlayer.TimeChanged -= OnTimeChanged;
 
-            _mediaPlayer.Stop();
+            try
+            {
+                if (_mediaPlayer.IsPlaying)
+                {
+                    _mediaPlayer.Stop();
+                }
+            }
+            catch
+            {
+                // Ignore errors during disposal
+            }
+
             _mediaPlayer.Dispose();
             _libVLC.Dispose();
-
-            _disposed = true;
         }
     }
 }

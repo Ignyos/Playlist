@@ -42,18 +42,9 @@ public partial class MainWindow : Window
         _playlists = new ObservableCollection<PlaylistViewModel>();
         _playlistItems = new ObservableCollection<PlaylistItemViewModel>();
         
-        // Ensure database is created and apply migrations
+        // Initialize database with proper migration handling
         var dbContext = new PlaylistDbContext();
-        try
-        {
-            dbContext.Database.Migrate();
-        }
-        catch
-        {
-            // If migration fails (e.g., database already exists with different schema),
-            // try EnsureCreated as fallback
-            dbContext.Database.EnsureCreated();
-        }
+        InitializeDatabase(dbContext, version);
         
         _mediaPlayerService = new MediaPlayerService(dbContext);
         _mediaPlayerService.MediaEnded += OnMediaEnded;
@@ -439,7 +430,11 @@ public partial class MainWindow : Window
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error creating playlist: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                var errorDetails = ex.ToString();
+                System.Diagnostics.Debug.WriteLine("=== Error creating playlist ===");
+                System.Diagnostics.Debug.WriteLine(errorDetails);
+                System.Diagnostics.Debug.WriteLine("================================");
+                MessageBox.Show($"Error creating playlist: {ex.Message}\n\nSee debug output for full details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }
@@ -821,6 +816,74 @@ public partial class MainWindow : Window
         _mediaPlayerService?.Dispose();
         _mediaPlayerWindow?.Close();
         base.OnClosed(e);
+    }
+
+    private void InitializeDatabase(PlaylistDbContext dbContext, Version? version)
+    {
+        System.Diagnostics.Debug.WriteLine("=== InitializeDatabase START ===");
+        System.Diagnostics.Debug.WriteLine($"Version: {version?.Major}.{version?.Minor}.{version?.Build}");
+        
+        try
+        {
+            // For v1.1.0 only: recreate database to ensure clean schema
+            // TODO: Remove this in v1.1.1 or later
+            if (version?.Major == 1 && version?.Minor == 1 && version?.Build == 0)
+            {
+                var dbPath = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Playlist", "playlist.db");
+                
+                System.Diagnostics.Debug.WriteLine($"Database path: {dbPath}");
+                System.Diagnostics.Debug.WriteLine($"File exists: {File.Exists(dbPath)}");
+                
+                if (File.Exists(dbPath))
+                {
+                    System.Diagnostics.Debug.WriteLine("Deleting existing database...");
+                    dbContext.Database.EnsureDeleted();
+                    System.Diagnostics.Debug.WriteLine("Database deleted");
+                }
+            }
+            
+            // Apply all pending migrations
+            System.Diagnostics.Debug.WriteLine("Running migrations...");
+            dbContext.Database.Migrate();
+            System.Diagnostics.Debug.WriteLine("Migrations completed successfully");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"ERROR in InitializeDatabase: {ex}");
+            
+            var errorMessage = $"Database initialization failed: {ex.Message}\n\n" +
+                             $"The application will attempt to recreate the database.\n" +
+                             $"Any existing data will be lost.\n\n" +
+                             $"Continue?";
+            
+            var result = MessageBox.Show(errorMessage, "Database Error", 
+                MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    dbContext.Database.EnsureDeleted();
+                    dbContext.Database.Migrate();
+                }
+                catch (Exception recreateEx)
+                {
+                    MessageBox.Show($"Failed to recreate database: {recreateEx.Message}\n\n" +
+                                  $"Please delete the database file manually at:\n" +
+                                  $"%LocalAppData%\\Playlist\\playlist.db",
+                                  "Critical Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Application.Current.Shutdown();
+                }
+            }
+            else
+            {
+                Application.Current.Shutdown();
+            }
+        }
+        
+        System.Diagnostics.Debug.WriteLine("=== InitializeDatabase END ===");
     }
 }
 
