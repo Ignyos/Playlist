@@ -1,35 +1,218 @@
-# Playlist v1.1.0
-
-## 🎉 What's New
-
-### Video Progress Tracking
-• Visual percentage pills show how much of each video has been watched
-• Video lengths are automatically detected on first playback
-• Smart resume: double-click a video to automatically continue from where you left off
-• Improved timestamp accuracy: progress is now saved every second (previously every 10 seconds)
-
-### Enhanced Playlist Creation
-• When adding a folder, the playlist name defaults to the folder name
-• Newly created playlists are automatically selected with the first item highlighted
-
-### UI/UX Improvements
-• Full-width hover effects: list item hover highlighting now spans the entire row
-• Added "Progress" and "Video" column headers to playlist items
-• Streamlined interface: removed redundant playlist name banner
-• Improved selection and hover colors with black text for readability
-• Removed unnecessary success messages for seamless user experience
-• Fixed cursor behavior: cursor now properly reappears when closing the media player
-• Fixed "Continue" option to work correctly from saved positions
-
-## 📦 Installation
-
-Download and run `PlaylistSetup.exe`
-
-## 📋 Requirements
-
-• Windows 10/11 (64-bit)
-• .NET 9.0 Runtime (included in installer)
-
-## 📖 Documentation
-
-Full documentation available at [playlist.ignyos.com](https://playlist.ignyos.com/)
+﻿diff --git a/src/Playlist/Data/PlaylistDbContext.cs b/src/Playlist/Data/PlaylistDbContext.cs
+index a53ec58..02f5fed 100644
+--- a/src/Playlist/Data/PlaylistDbContext.cs
++++ b/src/Playlist/Data/PlaylistDbContext.cs
+@@ -25,7 +25,8 @@ public class PlaylistDbContext : DbContext
+             Directory.CreateDirectory(directory);
+         }
+         
+-        optionsBuilder.UseSqlite($"Data Source={dbPath}");
++        optionsBuilder.UseSqlite($"Data Source={dbPath}")
++            .LogTo(message => System.Diagnostics.Debug.WriteLine(message), Microsoft.Extensions.Logging.LogLevel.Information);
+     }
+ 
+     protected override void OnModelCreating(ModelBuilder modelBuilder)
+diff --git a/src/Playlist/MainWindow.xaml b/src/Playlist/MainWindow.xaml
+index bf07300..84a4090 100644
+--- a/src/Playlist/MainWindow.xaml
++++ b/src/Playlist/MainWindow.xaml
+@@ -128,15 +128,10 @@
+ 
+             <!-- Main Panel - Playlist Items -->
+             <DockPanel Grid.Column="2">
+-                <!-- Column Headers -->
+-                <Grid DockPanel.Dock="Top" Margin="10,10,10,5">
+-                    <Grid.ColumnDefinitions>
+-                        <ColumnDefinition Width="Auto"/>
+-                        <ColumnDefinition Width="*"/>
+-                    </Grid.ColumnDefinitions>
+-                    <TextBlock Grid.Column="0" Text="Progress" FontWeight="SemiBold" Margin="10,0,10,0" Width="50"/>
+-                    <TextBlock Grid.Column="1" Text="Video" FontWeight="SemiBold"/>
+-                </Grid>
++                <!-- Playlist Name Banner -->
++                <Border DockPanel.Dock="Top" Background="#E3F2FD" Padding="15" BorderBrush="#90CAF9" BorderThickness="0,0,0,1">
++                    <TextBlock Name="PlaylistNameTextBlock" FontSize="18" FontWeight="SemiBold" Text="Select a playlist" />
++                </Border>
+ 
+                 <!-- Playlist Items List -->
+                 <ListBox Name="PlaylistItemsListBox" Margin="10,0,10,10" Background="White"
+@@ -159,7 +154,6 @@
+                                         BorderThickness="1" BorderBrush="Black">
+                                     <TextBlock Text="{Binding ProgressPercentage, StringFormat={}{0}%}" 
+                                                FontSize="10" 
+-                                               Foreground="Black"
+                                                HorizontalAlignment="Center" 
+                                                VerticalAlignment="Center"/>
+                                 </Border>
+diff --git a/src/Playlist/MainWindow.xaml.cs b/src/Playlist/MainWindow.xaml.cs
+index aa6ce7f..f135152 100644
+--- a/src/Playlist/MainWindow.xaml.cs
++++ b/src/Playlist/MainWindow.xaml.cs
+@@ -42,18 +42,9 @@ public partial class MainWindow : Window
+         _playlists = new ObservableCollection<PlaylistViewModel>();
+         _playlistItems = new ObservableCollection<PlaylistItemViewModel>();
+         
+-        // Ensure database is created and apply migrations
++        // Initialize database with proper migration handling
+         var dbContext = new PlaylistDbContext();
+-        try
+-        {
+-            dbContext.Database.Migrate();
+-        }
+-        catch
+-        {
+-            // If migration fails (e.g., database already exists with different schema),
+-            // try EnsureCreated as fallback
+-            dbContext.Database.EnsureCreated();
+-        }
++        InitializeDatabase(dbContext, version);
+         
+         _mediaPlayerService = new MediaPlayerService(dbContext);
+         _mediaPlayerService.MediaEnded += OnMediaEnded;
+@@ -439,7 +430,11 @@ public partial class MainWindow : Window
+             }
+             catch (Exception ex)
+             {
+-                MessageBox.Show($"Error creating playlist: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
++                var errorDetails = ex.ToString();
++                System.Diagnostics.Debug.WriteLine("=== Error creating playlist ===");
++                System.Diagnostics.Debug.WriteLine(errorDetails);
++                System.Diagnostics.Debug.WriteLine("================================");
++                MessageBox.Show($"Error creating playlist: {ex.Message}\n\nSee debug output for full details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+             }
+         }
+     }
+@@ -822,6 +817,74 @@ public partial class MainWindow : Window
+         _mediaPlayerWindow?.Close();
+         base.OnClosed(e);
+     }
++
++    private void InitializeDatabase(PlaylistDbContext dbContext, Version? version)
++    {
++        System.Diagnostics.Debug.WriteLine("=== InitializeDatabase START ===");
++        System.Diagnostics.Debug.WriteLine($"Version: {version?.Major}.{version?.Minor}.{version?.Build}");
++        
++        try
++        {
++            // For v1.1.0 only: recreate database to ensure clean schema
++            // TODO: Remove this in v1.1.1 or later
++            if (version?.Major == 1 && version?.Minor == 1 && version?.Build == 0)
++            {
++                var dbPath = System.IO.Path.Combine(
++                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
++                    "Playlist", "playlist.db");
++                
++                System.Diagnostics.Debug.WriteLine($"Database path: {dbPath}");
++                System.Diagnostics.Debug.WriteLine($"File exists: {File.Exists(dbPath)}");
++                
++                if (File.Exists(dbPath))
++                {
++                    System.Diagnostics.Debug.WriteLine("Deleting existing database...");
++                    dbContext.Database.EnsureDeleted();
++                    System.Diagnostics.Debug.WriteLine("Database deleted");
++                }
++            }
++            
++            // Apply all pending migrations
++            System.Diagnostics.Debug.WriteLine("Running migrations...");
++            dbContext.Database.Migrate();
++            System.Diagnostics.Debug.WriteLine("Migrations completed successfully");
++        }
++        catch (Exception ex)
++        {
++            System.Diagnostics.Debug.WriteLine($"ERROR in InitializeDatabase: {ex}");
++            
++            var errorMessage = $"Database initialization failed: {ex.Message}\n\n" +
++                             $"The application will attempt to recreate the database.\n" +
++                             $"Any existing data will be lost.\n\n" +
++                             $"Continue?";
++            
++            var result = MessageBox.Show(errorMessage, "Database Error", 
++                MessageBoxButton.YesNo, MessageBoxImage.Warning);
++            
++            if (result == MessageBoxResult.Yes)
++            {
++                try
++                {
++                    dbContext.Database.EnsureDeleted();
++                    dbContext.Database.Migrate();
++                }
++                catch (Exception recreateEx)
++                {
++                    MessageBox.Show($"Failed to recreate database: {recreateEx.Message}\n\n" +
++                                  $"Please delete the database file manually at:\n" +
++                                  $"%LocalAppData%\\Playlist\\playlist.db",
++                                  "Critical Error", MessageBoxButton.OK, MessageBoxImage.Error);
++                    Application.Current.Shutdown();
++                }
++            }
++            else
++            {
++                Application.Current.Shutdown();
++            }
++        }
++        
++        System.Diagnostics.Debug.WriteLine("=== InitializeDatabase END ===");
++    }
+ }
+ 
+ // Adorner class for showing insertion point
+diff --git a/src/Playlist/Migrations/20260122010830_AddDurationToPlaylistItem.cs b/src/Playlist/Migrations/20260125003019_AddDurationToPlaylistItem.cs
+similarity index 100%
+rename from src/Playlist/Migrations/20260122010830_AddDurationToPlaylistItem.cs
+rename to src/Playlist/Migrations/20260125003019_AddDurationToPlaylistItem.cs
+diff --git a/src/Playlist/Services/MediaPlayerService.cs b/src/Playlist/Services/MediaPlayerService.cs
+index e862775..8f83001 100644
+--- a/src/Playlist/Services/MediaPlayerService.cs
++++ b/src/Playlist/Services/MediaPlayerService.cs
+@@ -24,7 +24,7 @@ namespace Playlist.Services
+ 
+         public MediaPlayer Player => _mediaPlayer;
+         public PlaylistItem? CurrentItem => _currentItem;
+-        public bool IsPlaying => _mediaPlayer.IsPlaying;
++        public bool IsPlaying => !_disposed && _mediaPlayer.IsPlaying;
+ 
+         public MediaPlayerService(PlaylistDbContext dbContext)
+         {
+@@ -124,7 +124,9 @@ namespace Playlist.Services
+ 
+         public async Task StopAsync()
+         {
+-            if (_currentItem != null && _mediaPlayer.IsPlaying)
++            if (_disposed || _currentItem == null) return;
++            
++            if (_mediaPlayer.IsPlaying)
+             {
+                 // Save current timestamp
+                 var currentTimeSeconds = (int)(_mediaPlayer.Time / 1000);
+@@ -274,16 +276,27 @@ namespace Playlist.Services
+         {
+             if (_disposed) return;
+ 
++            _disposed = true; // Set this first to prevent any further access
++
+             _mediaPlayer.Playing -= OnMediaPlaying;
+             _mediaPlayer.EndReached -= OnMediaEnded;
+             _mediaPlayer.EncounteredError -= OnMediaError;
+             _mediaPlayer.TimeChanged -= OnTimeChanged;
+ 
+-            _mediaPlayer.Stop();
++            try
++            {
++                if (_mediaPlayer.IsPlaying)
++                {
++                    _mediaPlayer.Stop();
++                }
++            }
++            catch
++            {
++                // Ignore errors during disposal
++            }
++
+             _mediaPlayer.Dispose();
+             _libVLC.Dispose();
+-
+-            _disposed = true;
+         }
+     }
+ }

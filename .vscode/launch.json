@@ -16,6 +16,7 @@
             "name": "Run Release Script",
             "type": "PowerShell",
             "request": "launch",
+            "preLaunchTask": "run-release",
             "script": "${workspaceFolder}/release.ps1",
             "cwd": "${workspaceFolder}"
         }
