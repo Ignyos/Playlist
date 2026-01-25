@@ -33,6 +33,16 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Style for Progress Indicator Pill -->
+        <Style x:Key="ProgressIndicatorPillStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding ProgressPercentage}" Value="100">
+                    <Setter Property="Background" Value="#C8E6C9"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
     <DockPanel>
         <!-- Menu Bar -->
@@ -40,7 +50,7 @@
             <MenuItem Header="_File">
                 <MenuItem Header="_New Playlist" Click="NewPlaylist_Click" />
                 <MenuItem Header="_History" Click="History_Click" />
-                <MenuItem Header="_Settings" />
+                <MenuItem Header="_Settings" Click="Settings_Click" />
                 <Separator />
                 <MenuItem Header="E_xit" Click="Exit_Click" />
             </MenuItem>
@@ -99,14 +109,22 @@
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="ListBoxItem">
-                                            <Border Name="Border" Padding="2" SnapsToDevicePixels="true">
+                                            <Border Name="Border" Padding="5" SnapsToDevicePixels="True">
                                                 <ContentPresenter />
                                             </Border>
                                             <ControlTemplate.Triggers>
-                                                <Trigger Property="IsSelected" Value="true">
-                                                    <Setter TargetName="Border" Property="Background" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
-                                                    <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}"/>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="Border" Property="Background" Value="#73aaff"/>
+                                                    <Setter Property="Foreground" Value="White"/>
                                                 </Trigger>
+                                                <MultiTrigger>
+                                                    <MultiTrigger.Conditions>
+                                                        <Condition Property="IsMouseOver" Value="True"/>
+                                                        <Condition Property="IsSelected" Value="False"/>
+                                                    </MultiTrigger.Conditions>
+                                                    <Setter TargetName="Border" Property="Background" Value="#c9deff"/>
+                                                    <Setter Property="Foreground" Value="Black"/>
+                                                </MultiTrigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>
                                     </Setter.Value>
@@ -124,14 +142,19 @@
             </Border>
 
             <!-- GridSplitter -->
-            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" />
+            <GridSplitter Grid.Column="1" Width="0" HorizontalAlignment="Stretch" />
 
             <!-- Main Panel - Playlist Items -->
             <DockPanel Grid.Column="2">
-                <!-- Playlist Name Banner -->
-                <Border DockPanel.Dock="Top" Background="#E3F2FD" Padding="15" BorderBrush="#90CAF9" BorderThickness="0,0,0,1">
-                    <TextBlock Name="PlaylistNameTextBlock" FontSize="18" FontWeight="SemiBold" Text="Select a playlist" />
-                </Border>
+                <!-- Column Headers -->
+                <Grid DockPanel.Dock="Top" Margin="10,5,10,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Progress" FontWeight="SemiBold" Margin="5,0,10,0" Width="50"/>
+                    <TextBlock Grid.Column="1" Text="Title" FontWeight="SemiBold"/>
+                </Grid>
 
                 <!-- Playlist Items List -->
                 <ListBox Name="PlaylistItemsListBox" Margin="10,0,10,10" Background="White"
@@ -150,10 +173,12 @@
                                 </Grid.ColumnDefinitions>
                                 <!-- Progress Indicator Pill -->
                                 <Border Grid.Column="0" Width="50" Height="20" CornerRadius="10" 
-                                        Background="White" Margin="0,0,10,0"
-                                        BorderThickness="1" BorderBrush="Black">
+                                        Margin="0,0,10,0"
+                                        BorderThickness="1" BorderBrush="Black"
+                                        Style="{StaticResource ProgressIndicatorPillStyle}">
                                     <TextBlock Text="{Binding ProgressPercentage, StringFormat={}{0}%}" 
-                                               FontSize="10" 
+                                               FontSize="14" 
+                                               Foreground="Black"
                                                HorizontalAlignment="Center" 
                                                VerticalAlignment="Center"/>
                                 </Border>

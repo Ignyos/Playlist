@@ -1,8 +1,9 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -45,6 +46,9 @@ public partial class MainWindow : Window
         // Initialize database with proper migration handling
         var dbContext = new PlaylistDbContext();
         InitializeDatabase(dbContext, version);
+
+        // Apply startup preference stored in settings
+        ApplyRunOnStartupSetting();
         
         _mediaPlayerService = new MediaPlayerService(dbContext);
         _mediaPlayerService.MediaEnded += OnMediaEnded;
@@ -82,6 +86,23 @@ public partial class MainWindow : Window
         catch
         {
             // Ignore errors restoring selection
+        }
+    }
+
+    private void ApplyRunOnStartupSetting()
+    {
+        try
+        {
+            using var context = new PlaylistDbContext();
+            var service = new PlaylistService(context);
+            var value = service.GetSetting("RunOnStartup");
+            var enableStartup = bool.TryParse(value, out var enabled) && enabled;
+
+            StartupService.ApplyRunOnStartup(enableStartup);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Failed to apply startup setting: {ex}");
         }
     }
 
@@ -403,6 +424,24 @@ public partial class MainWindow : Window
         }
     }
 
+    private void Settings_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var settingsWindow = new SettingsWindow
+            {
+                Owner = this
+            };
+
+            settingsWindow.ShowDialog();
+            ApplyRunOnStartupSetting();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error opening settings: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     private void NewPlaylist_Click(object sender, RoutedEventArgs e)
     {
         var window = new NewPlaylistWindow();
@@ -588,12 +627,20 @@ public partial class MainWindow : Window
         var item = PlaylistItemsListBox.SelectedItem as PlaylistItemViewModel;
         if (item == null) return;
 
-        // If there's a saved timestamp, continue from where it left off
+        // If there's a saved timestamp, check if it's at 100% (completed)
         using var context = new PlaylistDbContext();
         var dbItem = context.PlaylistItems.FirstOrDefault(i => i.Id == item.Id);
-        bool hasTimestamp = dbItem?.TimeStamp != null && dbItem.TimeStamp > 0;
+        
+        bool isAtCompletion = false;
+        if (dbItem?.TimeStamp != null && dbItem.TimeStamp > 0 && dbItem.Duration.HasValue && dbItem.Duration > 0)
+        {
+            var timeStampMs = dbItem.TimeStamp.Value * 1000L;
+            int progress = (int)((timeStampMs * 100) / dbItem.Duration.Value);
+            isAtCompletion = progress >= 100;
+        }
 
-        PlayMedia(item, fromStart: !hasTimestamp);
+        // Start from beginning if at completion, otherwise continue from timestamp
+        PlayMedia(item, fromStart: isAtCompletion || (dbItem?.TimeStamp == null || dbItem.TimeStamp == 0));
     }
 
     private async void PlayMedia(PlaylistItemViewModel item, bool fromStart)
@@ -616,6 +663,16 @@ public partial class MainWindow : Window
             using var context = new PlaylistDbContext();
             var playlistItem = context.PlaylistItems.FirstOrDefault(i => i.Id == item.Id);
             if (playlistItem == null) return;
+
+            // Apply fullscreen preference
+            var settingsService = new PlaylistService(context);
+            var fullscreenBehavior = settingsService.GetSetting("FullscreenBehavior");
+            var enterFullscreen = fullscreenBehavior == "Auto";
+
+            if (enterFullscreen)
+            {
+                await Dispatcher.InvokeAsync(() => _mediaPlayerWindow.EnterFullScreen());
+            }
 
             // Play media with MediaPlayerService
             await _mediaPlayerService!.PlayAsync(playlistItem, continueFromTimestamp: !fromStart);

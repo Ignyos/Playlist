@@ -145,15 +145,10 @@ namespace Playlist.Views
             }
         }
 
-        private async void Stop_Click(object sender, RoutedEventArgs e)
+        private void Stop_Click(object sender, RoutedEventArgs e)
         {
-            await _mediaPlayerService.StopAsync();
-            NowPlayingText.Text = "No media playing";
-            Title = "Media Player";
-            
-            // Stop auto-hide timer and keep controls visible when stopped
-            _hideControlsTimer.Stop();
-            ShowControlsWithoutTimer();
+            // Close the window (cleanup will be handled by Window_Closing)
+            Close();
         }
 
         private void VolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -252,6 +247,23 @@ namespace Playlist.Views
             });
         }
 
+        public void EnterFullScreen()
+        {
+            if (_isFullScreen) return;
+
+            _previousWindowState = WindowState;
+            _previousWindowStyle = WindowStyle;
+            _previousResizeMode = ResizeMode;
+
+            WindowStyle = WindowStyle.None;
+            ResizeMode = ResizeMode.NoResize;
+            Topmost = true;
+            WindowState = WindowState.Maximized;
+            _isFullScreen = true;
+            FullScreenIcon.Text = "⬚"; // Exit full screen icon
+            ShowControls();
+        }
+
         private void ToggleFullScreen()
         {
             if (_isFullScreen)
@@ -346,3 +358,7 @@ namespace Playlist.Views
         }
     }
 }
+
+
+
+

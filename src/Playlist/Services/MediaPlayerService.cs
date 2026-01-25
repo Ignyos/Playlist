@@ -182,12 +182,13 @@ namespace Playlist.Services
                 // Log to history
                 await LogHistoryAsync(_currentItem);
 
-                // Reset timestamp since playback completed
+                // Keep timestamp at duration (100%) since playback completed
                 var item = await _dbContext.PlaylistItems
                     .FirstOrDefaultAsync(i => i.Id == _currentItem.Id);
-                if (item != null)
+                if (item != null && item.Duration.HasValue && item.Duration.Value > 0)
                 {
-                    item.TimeStamp = null;
+                    // Set timestamp to duration (in seconds) to represent 100% progress
+                    item.TimeStamp = (int)(item.Duration.Value / 1000);
                     await _dbContext.SaveChangesAsync();
                 }
 
