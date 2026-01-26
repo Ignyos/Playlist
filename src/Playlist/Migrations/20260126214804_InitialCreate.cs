@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Playlist.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialWithSelectedItem : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -69,6 +69,7 @@ namespace Playlist.Migrations
                     Name = table.Column<string>(type: "TEXT", nullable: false),
                     LastPlayed = table.Column<DateTime>(type: "TEXT", nullable: false),
                     TimeStamp = table.Column<int>(type: "INTEGER", nullable: true),
+                    Duration = table.Column<long>(type: "INTEGER", nullable: true),
                     DeleteDate = table.Column<DateTime>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>

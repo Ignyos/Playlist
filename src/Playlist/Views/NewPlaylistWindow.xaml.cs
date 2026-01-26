@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using Microsoft.Win32;
+using Microsoft.Extensions.DependencyInjection;
 using Playlist.Data;
 using Playlist.Services;
 
@@ -13,17 +14,23 @@ public partial class NewPlaylistWindow : Window
     public ObservableCollection<string> SelectedFiles { get; } = new();
     public string PlaylistName => PlaylistNameTextBox.Text;
     public bool DialogResultValue { get; private set; }
+    private readonly IPlaylistDbContextFactory _dbContextFactory;
 
     public NewPlaylistWindow()
     {
         InitializeComponent();
+        
+        // Get the DbContextFactory from the application's service provider
+        var app = (App)Application.Current;
+        _dbContextFactory = app.ServiceProvider.GetRequiredService<IPlaylistDbContextFactory>();
+        
         FilesListBox.ItemsSource = SelectedFiles;
     }
 
     public NewPlaylistWindow(int playlistId) : this()
     {
         // Load playlist data using own DbContext
-        using var context = new PlaylistDbContext();
+        var context = _dbContextFactory.CreateDbContext();
         var service = new PlaylistService(context);
         var playlist = service.GetPlaylistById(playlistId);
         
@@ -139,3 +146,5 @@ public partial class NewPlaylistWindow : Window
         Close();
     }
 }
+
+

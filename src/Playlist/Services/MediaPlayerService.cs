@@ -67,23 +67,27 @@ namespace Playlist.Services
                 // Start playback
                 _mediaPlayer.Play();
 
-                // Wait for media to start loading
-                await Task.Delay(100);
+                // Wait for media to start loading and metadata to be parsed
+                // Retry up to 10 times with increasing delays
+                long duration = 0;
+                for (int attempt = 0; attempt < 10; attempt++)
+                {
+                    await Task.Delay(100 * (attempt + 1)); // 100ms, 200ms, 300ms, etc.
+                    duration = _mediaPlayer.Length;
+                    if (duration > 0)
+                        break;
+                }
                 
                 // Capture duration if not already stored
-                if (!item.Duration.HasValue || item.Duration.Value == 0)
+                if ((!item.Duration.HasValue || item.Duration.Value == 0) && duration > 0)
                 {
-                    var duration = _mediaPlayer.Length; // Duration in milliseconds
-                    if (duration > 0)
+                    var dbItem = await _dbContext.PlaylistItems
+                        .FirstOrDefaultAsync(i => i.Id == item.Id);
+                    if (dbItem != null)
                     {
-                        var dbItem = await _dbContext.PlaylistItems
-                            .FirstOrDefaultAsync(i => i.Id == item.Id);
-                        if (dbItem != null)
-                        {
-                            dbItem.Duration = duration;
-                            await _dbContext.SaveChangesAsync();
-                            item.Duration = duration; // Update the in-memory object too
-                        }
+                        dbItem.Duration = duration;
+                        await _dbContext.SaveChangesAsync();
+                        item.Duration = duration; // Update the in-memory object too
                     }
                 }
 
@@ -188,7 +192,8 @@ namespace Playlist.Services
                 if (item != null && item.Duration.HasValue && item.Duration.Value > 0)
                 {
                     // Set timestamp to duration (in seconds) to represent 100% progress
-                    item.TimeStamp = (int)(item.Duration.Value / 1000);
+                    // Use rounding to avoid losing precision from integer division
+                    item.TimeStamp = (int)Math.Round(item.Duration.Value / 1000.0);
                     await _dbContext.SaveChangesAsync();
                 }
 

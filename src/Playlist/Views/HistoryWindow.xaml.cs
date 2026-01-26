@@ -3,7 +3,9 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Playlist.Data;
+using Playlist.Services;
 
 namespace Playlist.Views;
 
@@ -16,9 +18,16 @@ public partial class HistoryWindow : Window
         public string ItemName { get; set; } = string.Empty;
     }
 
+    private readonly IPlaylistDbContextFactory _dbContextFactory;
+
     public HistoryWindow()
     {
         InitializeComponent();
+        
+        // Get the DbContextFactory from the application's service provider
+        var app = (App)Application.Current;
+        _dbContextFactory = app.ServiceProvider.GetRequiredService<IPlaylistDbContextFactory>();
+        
         LoadHistory();
     }
 
@@ -26,7 +35,7 @@ public partial class HistoryWindow : Window
     {
         try
         {
-            using var context = new PlaylistDbContext();
+            var context = _dbContextFactory.CreateDbContext();
             
             var historyEntries = context.History
                 .Include(h => h.Playlist)
@@ -55,3 +64,5 @@ public partial class HistoryWindow : Window
         Close();
     }
 }
+
+

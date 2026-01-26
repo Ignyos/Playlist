@@ -1,19 +1,23 @@
 using System;
 using System.Windows;
-using Playlist.Data;
+using Microsoft.Extensions.DependencyInjection;
 using Playlist.Services;
 
 namespace Playlist.Views;
 
 public partial class SettingsWindow : Window
 {
-    private const string RunOnStartupSettingKey = "RunOnStartup";
-    private const string FullscreenBehaviorSettingKey = "FullscreenBehavior";
     private bool _isLoadingSettings = false;
+    private readonly ISettingService _settingService;
 
     public SettingsWindow()
     {
         InitializeComponent();
+        
+        // Get the SettingService from the application's service provider
+        var app = (App)Application.Current;
+        _settingService = app.ServiceProvider.GetRequiredService<ISettingService>();
+        
         LoadSettings();
     }
 
@@ -22,22 +26,19 @@ public partial class SettingsWindow : Window
         _isLoadingSettings = true;
         try
         {
-            using var context = new PlaylistDbContext();
-            var service = new PlaylistService(context);
-            
             // Load run on startup setting
-            var runOnStartup = service.GetSetting(RunOnStartupSettingKey);
-            if (bool.TryParse(runOnStartup, out var enabled))
-            {
-                RunOnStartupCheckBox.IsChecked = enabled;
-            }
-            else
+            var runOnStartup = _settingService.GetRunOnStartup();
+            if (!runOnStartup)
             {
                 RunOnStartupCheckBox.IsChecked = StartupService.IsRunOnStartupEnabled();
             }
+            else
+            {
+                RunOnStartupCheckBox.IsChecked = true;
+            }
 
             // Load fullscreen behavior setting
-            var fullscreenBehavior = service.GetSetting(FullscreenBehaviorSettingKey);
+            var fullscreenBehavior = _settingService.GetFullscreenBehavior();
             if (fullscreenBehavior == "Auto")
             {
                 FullscreenAutoRadio.IsChecked = true;
@@ -65,9 +66,7 @@ public partial class SettingsWindow : Window
         
         try
         {
-            using var context = new PlaylistDbContext();
-            var service = new PlaylistService(context);
-            service.SetSetting(RunOnStartupSettingKey, enableStartup.ToString());
+            _settingService.SetRunOnStartup(enableStartup);
             StartupService.ApplyRunOnStartup(enableStartup);
         }
         catch (Exception ex)
@@ -83,9 +82,7 @@ public partial class SettingsWindow : Window
         try
         {
             var behavior = FullscreenAutoRadio.IsChecked == true ? "Auto" : "Default";
-            using var context = new PlaylistDbContext();
-            var service = new PlaylistService(context);
-            service.SetSetting(FullscreenBehaviorSettingKey, behavior);
+            _settingService.SetFullscreenBehavior(behavior);
         }
         catch (Exception ex)
         {
@@ -93,3 +90,6 @@ public partial class SettingsWindow : Window
         }
     }
 }
+
+
+

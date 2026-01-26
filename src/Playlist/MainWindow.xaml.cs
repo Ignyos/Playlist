@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Playlist.Data;
 using Playlist.Services;
 using Playlist.ViewModels;
@@ -23,6 +24,8 @@ namespace Playlist;
 /// </summary>
 public partial class MainWindow : Window
 {
+    private readonly IPlaylistDbContextFactory _dbContextFactory;
+    private readonly ISettingService _settingService;
     private readonly ObservableCollection<PlaylistViewModel> _playlists;
     private readonly ObservableCollection<PlaylistItemViewModel> _playlistItems;
     private PlaylistViewModel? _selectedPlaylist;
@@ -37,6 +40,11 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         
+        // Get services from the application's service provider
+        var app = (App)Application.Current;
+        _dbContextFactory = app.ServiceProvider.GetRequiredService<IPlaylistDbContextFactory>();
+        _settingService = app.ServiceProvider.GetRequiredService<ISettingService>();
+        
         // Set title with version
         var version = Assembly.GetExecutingAssembly().GetName().Version;
         Title = $"Playlist v{version?.Major}.{version?.Minor}.{version?.Build}";
@@ -45,7 +53,7 @@ public partial class MainWindow : Window
         _playlistItems = new ObservableCollection<PlaylistItemViewModel>();
         
         // Initialize database with proper migration handling
-        var dbContext = new PlaylistDbContext();
+        var dbContext = _dbContextFactory.CreateDbContext();
         InitializeDatabase(dbContext, version);
 
         // Apply startup preference stored in settings
@@ -71,9 +79,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            using var context = new PlaylistDbContext();
-            var service = new PlaylistService(context);
-            var selectedIdStr = service.GetSetting("SelectedPlaylistId");
+            var selectedIdStr = _settingService.GetSelectedPlaylistId();
             
             if (!string.IsNullOrEmpty(selectedIdStr) && int.TryParse(selectedIdStr, out int selectedId))
             {
@@ -94,10 +100,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            using var context = new PlaylistDbContext();
-            var service = new PlaylistService(context);
-            var value = service.GetSetting("RunOnStartup");
-            var enableStartup = bool.TryParse(value, out var enabled) && enabled;
+            var enableStartup = _settingService.GetRunOnStartup();
 
             StartupService.ApplyRunOnStartup(enableStartup);
         }
@@ -109,7 +112,7 @@ public partial class MainWindow : Window
 
     private void LoadPlaylists(string? searchTerm = null)
     {
-        using var context = new PlaylistDbContext();
+        var context = _dbContextFactory.CreateDbContext();
         var service = new PlaylistService(context);
         var playlists = service.GetAllPlaylists(searchTerm);
         
@@ -141,7 +144,7 @@ public partial class MainWindow : Window
 
     private void LoadPlaylistItems(int playlistId)
     {
-        using var context = new PlaylistDbContext();
+        var context = _dbContextFactory.CreateDbContext();
         var service = new PlaylistService(context);
         var items = service.GetPlaylistItems(playlistId);
         var playlist = service.GetPlaylistById(playlistId);
@@ -183,18 +186,14 @@ public partial class MainWindow : Window
             LoadPlaylistItems(_selectedPlaylist.Id);
             
             // Save selected playlist ID to settings
-            using var context = new PlaylistDbContext();
-            var service = new PlaylistService(context);
-            service.SetSetting("SelectedPlaylistId", _selectedPlaylist.Id.ToString());
+            _settingService.SetSelectedPlaylistId(_selectedPlaylist.Id.ToString());
         }
         else
         {
             _playlistItems.Clear();
             
             // Clear selected playlist ID from settings
-            using var context = new PlaylistDbContext();
-            var service = new PlaylistService(context);
-            service.SetSetting("SelectedPlaylistId", "");
+            _settingService.SetSelectedPlaylistId("");
         }
     }
 
@@ -203,7 +202,7 @@ public partial class MainWindow : Window
         if (_selectedPlaylist != null)
         {
             var selectedItem = PlaylistItemsListBox.SelectedItem as PlaylistItemViewModel;
-            using var context = new PlaylistDbContext();
+            var context = _dbContextFactory.CreateDbContext();
             var service = new PlaylistService(context);
             service.UpdatePlaylistSelectedItem(_selectedPlaylist.Id, selectedItem?.Id);
         }
@@ -401,7 +400,7 @@ public partial class MainWindow : Window
                 
                 // Update the database
                 var itemIds = items.Select(i => i.Id).ToList();
-                using var context = new PlaylistDbContext();
+                var context = _dbContextFactory.CreateDbContext();
                 var service = new PlaylistService(context);
                 service.ReorderPlaylistItems(_selectedPlaylist.Id, itemIds);
                 
@@ -460,7 +459,7 @@ public partial class MainWindow : Window
         {
             try
             {
-                using var context = new PlaylistDbContext();
+                var context = _dbContextFactory.CreateDbContext();
                 var service = new PlaylistService(context);
                 var newPlaylist = service.CreatePlaylist(window.PlaylistName, window.SelectedFiles.ToList());
                 LoadPlaylists();
@@ -510,7 +509,7 @@ public partial class MainWindow : Window
         {
             try
             {
-                using var context = new PlaylistDbContext();
+                var context = _dbContextFactory.CreateDbContext();
                 var service = new PlaylistService(context);
                 
                 Log($"[EditPlaylist] Starting smart merge for playlist ID: {_selectedPlaylist.Id}");
@@ -604,7 +603,7 @@ public partial class MainWindow : Window
         {
             try
             {
-                using var context = new PlaylistDbContext();
+                var context = _dbContextFactory.CreateDbContext();
                 var service = new PlaylistService(context);
                 service.DeletePlaylist(_selectedPlaylist.Id);
                 LoadPlaylists();
@@ -639,7 +638,7 @@ public partial class MainWindow : Window
         if (item == null) return;
 
         // If there's a saved timestamp, check if it's at 100% (completed)
-        using var context = new PlaylistDbContext();
+        var context = _dbContextFactory.CreateDbContext();
         var dbItem = context.PlaylistItems.FirstOrDefault(i => i.Id == item.Id);
         
         bool isAtCompletion = false;
@@ -671,13 +670,12 @@ public partial class MainWindow : Window
             _mediaPlayerWindow.Activate();
 
             // Get the actual PlaylistItem from database
-            using var context = new PlaylistDbContext();
+            var context = _dbContextFactory.CreateDbContext();
             var playlistItem = context.PlaylistItems.FirstOrDefault(i => i.Id == item.Id);
             if (playlistItem == null) return;
 
             // Apply fullscreen preference
-            var settingsService = new PlaylistService(context);
-            var fullscreenBehavior = settingsService.GetSetting("FullscreenBehavior");
+            var fullscreenBehavior = _settingService.GetFullscreenBehavior();
             var enterFullscreen = fullscreenBehavior == "Auto";
 
             if (enterFullscreen)
@@ -729,7 +727,7 @@ public partial class MainWindow : Window
         {
             try
             {
-                using var context = new PlaylistDbContext();
+                var context = _dbContextFactory.CreateDbContext();
                 var service = new PlaylistService(context);
                 service.UpdatePlaylistItemName(item.Id, textBox.Text);
                 
@@ -761,7 +759,7 @@ public partial class MainWindow : Window
         {
             try
             {
-                using var context = new PlaylistDbContext();
+                var context = _dbContextFactory.CreateDbContext();
                 var service = new PlaylistService(context);
                 service.RemovePlaylistItem(item.Id);
                 if (_selectedPlaylist != null)
@@ -1008,3 +1006,6 @@ internal class ListBoxInsertionAdorner : Adorner
         }
     }
 }
+
+
+

@@ -12,21 +12,9 @@ public class PlaylistDbContext : DbContext
     public DbSet<History> History { get; set; } = null!;
     public DbSet<ErrorLog> ErrorLogs { get; set; } = null!;
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    public PlaylistDbContext(DbContextOptions<PlaylistDbContext> options) 
+        : base(options)
     {
-        var dbPath = System.IO.Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Playlist",
-            "playlist.db");
-        
-        var directory = System.IO.Path.GetDirectoryName(dbPath);
-        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-        
-        optionsBuilder.UseSqlite($"Data Source={dbPath}")
-            .LogTo(message => System.Diagnostics.Debug.WriteLine(message), Microsoft.Extensions.Logging.LogLevel.Information);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

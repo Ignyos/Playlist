@@ -192,27 +192,6 @@ public class PlaylistService
         }
     }
 
-    public string? GetSetting(string key)
-    {
-        var setting = _context.Settings.Find(key);
-        return setting?.Value;
-    }
-
-    public void SetSetting(string key, string value)
-    {
-        var setting = _context.Settings.Find(key);
-        if (setting == null)
-        {
-            setting = new Setting { Key = key, Value = value };
-            _context.Settings.Add(setting);
-        }
-        else
-        {
-            setting.Value = value;
-        }
-        _context.SaveChanges();
-    }
-
     public void UpdatePlaylistSelectedItem(int playlistId, int? selectedItemId)
     {
         var playlist = _context.Playlists.Find(playlistId);
