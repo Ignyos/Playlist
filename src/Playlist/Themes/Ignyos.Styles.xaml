@@ -1,0 +1,55 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+      Ignyos Design System - Reusable Styles
+      Text and other styles that depend on colors and typography tokens.
+      Requires: Ignyos.Colors.xaml, Ignyos.Tokens.xaml
+      This layer contains all styles that combine colors with typography.
+      Loaded after Colors and Tokens to ensure all resources are available.
+    -->
+
+    <!-- ========================================================= -->
+    <!-- Text Styles                                               -->
+    <!-- ========================================================= -->
+    
+    <Style x:Key="Text.Display" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource FontSize.Display}"/>
+        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Neutral.Text.Strong}"/>
+    </Style>
+
+    <Style x:Key="Text.Heading" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource FontSize.Heading}"/>
+        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Neutral.Text.Strong}"/>
+    </Style>
+
+    <Style x:Key="Text.SubHeading" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource FontSize.SubHeading}"/>
+        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Neutral.Text}"/>
+    </Style>
+
+    <Style x:Key="Text.Body" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource FontSize.Body}"/>
+        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Neutral.Text}"/>
+    </Style>
+
+    <Style x:Key="Text.Body.Small" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource FontSize.Body.Small}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Neutral.Text.Muted}"/>
+    </Style>
+
+    <Style x:Key="Text.Muted" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource FontSize.Body}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Neutral.Text.Muted}"/>
+    </Style>
+
+</ResourceDictionary>

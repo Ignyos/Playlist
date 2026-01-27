@@ -8,6 +8,11 @@
         Title="Playlist" Height="600" Width="900" MinHeight="400" MinWidth="600"
         Icon="pack://application:,,,/Assets/icon.ico">
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Using Ignyos design system theme -->
+                <ResourceDictionary Source="pack://application:,,,/Themes/Ignyos.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
         <Style TargetType="ListBoxItem">
             <Setter Property="Template">
                 <Setter.Value>
@@ -43,22 +48,26 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
+        </ResourceDictionary>
     </Window.Resources>
     <DockPanel>
         <!-- Menu Bar -->
-        <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_File">
-                <MenuItem Header="_New Playlist" Click="NewPlaylist_Click" />
-                <MenuItem Header="_History" Click="History_Click" />
-                <MenuItem Header="_Settings" Click="Settings_Click" />
+        <Menu DockPanel.Dock="Top" Style="{StaticResource Menu.Base}">
+            <MenuItem Header="_File" Style="{StaticResource MenuItem.Base}">
+                <MenuItem Header="_New Playlist" Click="NewPlaylist_Click" Style="{StaticResource MenuItem.Base}"/>
+                <MenuItem Header="_History" Click="History_Click" Style="{StaticResource MenuItem.Base}"/>
+                <MenuItem Header="_Settings" Click="Settings_Click" Style="{StaticResource MenuItem.Base}"/>
                 <Separator />
-                <MenuItem Header="E_xit" Click="Exit_Click" />
+                <MenuItem Header="E_xit" Click="Exit_Click" Style="{StaticResource MenuItem.Base}"/>
             </MenuItem>
-            <MenuItem Header="_About">
-                <MenuItem Header="_Playlist" Click="AboutPlaylist_Click" />
-                <MenuItem Header="_Ignyos" Click="AboutIgnyos_Click" />
+            <MenuItem Header="_About" Style="{StaticResource MenuItem.Base}">
+                <MenuItem Header="_Playlist" Click="AboutPlaylist_Click" Style="{StaticResource MenuItem.Base}"/>
+                <MenuItem Header="_Ignyos" Click="AboutIgnyos_Click" Style="{StaticResource MenuItem.Base}"/>
                 <Separator />
-                <MenuItem Header="_Check for Updates" Click="CheckForUpdates_Click" />
+                <MenuItem Header="_Check for Updates" Click="CheckForUpdates_Click" Style="{StaticResource MenuItem.Base}"/>
+            </MenuItem>
+            <MenuItem Header="_Debug" Style="{StaticResource MenuItem.Base}">
+                <MenuItem Header="Show Style Preview" Click="ShowStylePreview_Click" Style="{StaticResource MenuItem.Base}"/>
             </MenuItem>
         </Menu>
 

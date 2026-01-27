@@ -1,0 +1,124 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+      Ignyos Design System - Color Tokens & Brush Aliases
+      Base layer with all color and brush definitions.
+      No dependencies - can be used standalone.
+    -->
+
+    <!-- ========================================================= -->
+    <!-- Color Tokens                                              -->
+    <!-- ========================================================= -->
+
+    <!-- Accent Colors (Primary brand color) -->
+    <Color x:Key="Color.Accent.Primary">#C18B5A</Color>
+    <Color x:Key="Color.Accent.Strong">#FF9B6B</Color>
+
+    <!-- Flame Palette (Variations of accent) -->
+    <Color x:Key="Color.Flame.100">#D9956D</Color>
+    <Color x:Key="Color.Flame.200">#E5A17D</Color>
+    <Color x:Key="Color.Flame.300">#F1AD8D</Color>
+    <Color x:Key="Color.Flame.400">#FFB99D</Color>
+    <Color x:Key="Color.Flame.500">#FFC1BC</Color>
+
+    <!-- Neutral Grays (Dark theme palette) -->
+    <Color x:Key="Color.Neutral.Background">#0A0A0A</Color>
+    <Color x:Key="Color.Neutral.Surface">#0F0F0F</Color>
+    <Color x:Key="Color.Neutral.Surface.Hover">#1A1A1A</Color>
+    <Color x:Key="Color.Neutral.Surface.Active">#252525</Color>
+    <Color x:Key="Color.Neutral.Border">#2A2A2A</Color>
+    <Color x:Key="Color.Neutral.Text.Muted">#A0A0A0</Color>
+    <Color x:Key="Color.Neutral.Text">#E0E0E0</Color>
+    <Color x:Key="Color.Neutral.Text.Strong">#FFFFFF</Color>
+
+    <!-- Semantic Colors -->
+    <Color x:Key="Color.Semantic.Success">#22C55E</Color>
+    <Color x:Key="Color.Semantic.Warning">#F59E0B</Color>
+    <Color x:Key="Color.Semantic.Danger">#EF4444</Color>
+    <Color x:Key="Color.Semantic.Info">#3B82F6</Color>
+
+    <!-- Surface & Overlay Colors -->
+    <Color x:Key="Color.Surface.Pill">#1A1A1A</Color>
+    <Color x:Key="Color.Surface.Pill.Hover">#252525</Color>
+    <Color x:Key="Color.Surface.Overlay">#00000080</Color>
+
+    <!-- Shadow Color -->
+    <Color x:Key="Color.Shadow">#000000</Color>
+
+    <!-- ========================================================= -->
+    <!-- Solid Color Brush Aliases                                 -->
+    <!-- ========================================================= -->
+
+    <!-- Accent Brushes -->
+    <SolidColorBrush x:Key="Brush.Accent.Primary" Color="{StaticResource Color.Accent.Primary}"/>
+    <SolidColorBrush x:Key="Brush.Accent.Strong" Color="{StaticResource Color.Accent.Strong}"/>
+
+    <!-- Flame Palette Brushes -->
+    <SolidColorBrush x:Key="Brush.Flame.100" Color="{StaticResource Color.Flame.100}"/>
+    <SolidColorBrush x:Key="Brush.Flame.200" Color="{StaticResource Color.Flame.200}"/>
+    <SolidColorBrush x:Key="Brush.Flame.300" Color="{StaticResource Color.Flame.300}"/>
+    <SolidColorBrush x:Key="Brush.Flame.400" Color="{StaticResource Color.Flame.400}"/>
+    <SolidColorBrush x:Key="Brush.Flame.500" Color="{StaticResource Color.Flame.500}"/>
+
+    <!-- Neutral Brushes -->
+    <SolidColorBrush x:Key="Brush.Neutral.Background" Color="{StaticResource Color.Neutral.Background}"/>
+    <SolidColorBrush x:Key="Brush.Neutral.Surface" Color="{StaticResource Color.Neutral.Surface}"/>
+    <SolidColorBrush x:Key="Brush.Neutral.Surface.Hover" Color="{StaticResource Color.Neutral.Surface.Hover}"/>
+    <SolidColorBrush x:Key="Brush.Neutral.Surface.Active" Color="{StaticResource Color.Neutral.Surface.Active}"/>
+    <SolidColorBrush x:Key="Brush.Neutral.Border" Color="{StaticResource Color.Neutral.Border}"/>
+    <SolidColorBrush x:Key="Brush.Neutral.Text.Muted" Color="{StaticResource Color.Neutral.Text.Muted}"/>
+    <SolidColorBrush x:Key="Brush.Neutral.Text" Color="{StaticResource Color.Neutral.Text}"/>
+    <SolidColorBrush x:Key="Brush.Neutral.Text.Strong" Color="{StaticResource Color.Neutral.Text.Strong}"/>
+
+    <!-- Semantic Brushes -->
+    <SolidColorBrush x:Key="Brush.Semantic.Success" Color="{StaticResource Color.Semantic.Success}"/>
+    <SolidColorBrush x:Key="Brush.Semantic.Warning" Color="{StaticResource Color.Semantic.Warning}"/>
+    <SolidColorBrush x:Key="Brush.Semantic.Danger" Color="{StaticResource Color.Semantic.Danger}"/>
+    <SolidColorBrush x:Key="Brush.Semantic.Info" Color="{StaticResource Color.Semantic.Info}"/>
+
+    <!-- Surface & Overlay Brushes -->
+    <SolidColorBrush x:Key="Brush.Surface.Pill" Color="{StaticResource Color.Surface.Pill}"/>
+    <SolidColorBrush x:Key="Brush.Surface.Pill.Hover" Color="{StaticResource Color.Surface.Pill.Hover}"/>
+    <SolidColorBrush x:Key="Brush.Surface.Overlay" Color="{StaticResource Color.Surface.Overlay}"/>
+
+    <!-- ========================================================= -->
+    <!-- Gradient Brushes                                          -->
+    <!-- ========================================================= -->
+
+    <!-- Primary Accent Gradient (warm orange glow) -->
+    <LinearGradientBrush x:Key="Brush.Gradient.Primary" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="{StaticResource Color.Accent.Primary}" Offset="0"/>
+        <GradientStop Color="{StaticResource Color.Accent.Strong}" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- Header Gradient (dark to light for elevation) -->
+    <LinearGradientBrush x:Key="Brush.Gradient.Header" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="{StaticResource Color.Neutral.Surface}" Offset="0"/>
+        <GradientStop Color="{StaticResource Color.Neutral.Border}" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- ========================================================= -->
+    <!-- Shadow Effects                                            -->
+    <!-- ========================================================= -->
+    <DropShadowEffect x:Key="Shadow.Elevation1"
+                      Color="{StaticResource Color.Shadow}"
+                      BlurRadius="8"
+                      ShadowDepth="2"
+                      Direction="270"
+                      Opacity="0.3"/>
+    
+    <DropShadowEffect x:Key="Shadow.Elevation2"
+                      Color="{StaticResource Color.Shadow}"
+                      BlurRadius="16"
+                      ShadowDepth="3"
+                      Direction="270"
+                      Opacity="0.4"/>
+    
+    <DropShadowEffect x:Key="Shadow.Elevation3"
+                      Color="{StaticResource Color.Shadow}"
+                      BlurRadius="40"
+                      ShadowDepth="4"
+                      Direction="270"
+                      Opacity="0.5"/>
+
+</ResourceDictionary>

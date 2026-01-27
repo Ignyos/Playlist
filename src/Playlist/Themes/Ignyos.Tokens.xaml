@@ -1,0 +1,63 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    <!--
+      Ignyos Design System - Design Tokens
+      Typography, spacing, radius, animations, and shadow effects.
+      Requires: Ignyos.Colors.xaml
+      This layer defines pure design tokens (fonts, sizes, spacing) that don't depend on
+      color resources. Styles are in separate files to avoid resource resolution issues.
+    -->
+
+    <!-- ========================================================= -->
+    <!-- Typography Tokens                                         -->
+    <!-- ========================================================= -->
+    <FontFamily x:Key="Font.Primary">Segoe UI, -apple-system, BlinkMacSystemFont, Roboto, Oxygen, Ubuntu, Cantarell, sans-serif</FontFamily>
+    <FontFamily x:Key="Font.Mono">Cascadia Mono, Courier New, monospace</FontFamily>
+
+    <!-- Font sizes (in points) -->
+    <sys:Double x:Key="FontSize.Display">30</sys:Double>
+    <sys:Double x:Key="FontSize.Heading">18</sys:Double>
+    <sys:Double x:Key="FontSize.SubHeading">14</sys:Double>
+    <sys:Double x:Key="FontSize.Body">13</sys:Double>
+    <sys:Double x:Key="FontSize.Body.Small">12</sys:Double>
+
+    <!-- Font weights -->
+    <FontWeight x:Key="FontWeight.Light">Light</FontWeight>
+    <FontWeight x:Key="FontWeight.Regular">Normal</FontWeight>
+    <FontWeight x:Key="FontWeight.SemiBold">SemiBold</FontWeight>
+    
+    <!-- Line heights -->
+    <sys:Double x:Key="LineHeight.Base">1.6</sys:Double>
+    <sys:Double x:Key="LineHeight.Lead">1.7</sys:Double>
+
+    <!-- ========================================================= -->
+    <!-- Spacing Scale (in pixels)                                 -->
+    <!-- ========================================================= -->
+    <Thickness x:Key="Space.2XS">8</Thickness>
+    <Thickness x:Key="Space.XS">16</Thickness>
+    <Thickness x:Key="Space.SM">24</Thickness>
+    <Thickness x:Key="Space.MD">40</Thickness>
+    <Thickness x:Key="Space.LG">48</Thickness>
+    <Thickness x:Key="Space.XL">64</Thickness>
+
+    <!-- ========================================================= -->
+    <!-- Border Radius (rounded corners)                           -->
+    <!-- ========================================================= -->
+    <CornerRadius x:Key="Radius.MD">8</CornerRadius>
+    <CornerRadius x:Key="Radius.LG">16</CornerRadius>
+
+    <!-- ========================================================= -->
+    <!-- Animations                                                -->
+    <!-- ========================================================= -->
+    <Duration x:Key="Duration.Fast">0:0:0.2</Duration>
+    <Duration x:Key="Duration.Normal">0:0:0.3</Duration>
+
+    <!-- ========================================================= -->
+    <!-- Shadow Effects                                            -->
+    <!-- ========================================================= -->
+    <DropShadowEffect x:Key="Shadow.LG" BlurRadius="12" ShadowDepth="4" Opacity="0.3"/>
+    <DropShadowEffect x:Key="Shadow.MD" BlurRadius="8" ShadowDepth="2" Opacity="0.2"/>
+    <DropShadowEffect x:Key="Shadow.SM" BlurRadius="4" ShadowDepth="1" Opacity="0.15"/>
+
+</ResourceDictionary>

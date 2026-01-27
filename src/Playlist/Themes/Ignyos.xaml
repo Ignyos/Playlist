@@ -1,0 +1,34 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+      Ignyos Design System - Master Resource Dictionary
+      
+      This is the main entry point for the Ignyos design system.
+      Include this in your application's App.xaml or MainWindow.xaml to use the complete theme.
+      
+      Merge order matters:
+      1. Colors (base color tokens and brush aliases)
+      2. Tokens (typography, spacing, radius, shadows, text styles)
+      3. Components (Button, Menu, etc. - depend on colors and tokens)
+    -->
+
+    <ResourceDictionary.MergedDictionaries>
+        <!-- Base colors and brushes (no dependencies) -->
+        <ResourceDictionary Source="pack://application:,,,/Themes/Ignyos.Colors.xaml"/>
+        
+        <!-- Typography, spacing, radius, shadows (depends on: Colors) -->
+        <!-- Fonts and sizes are pure tokens with no color dependencies -->
+        <ResourceDictionary Source="pack://application:,,,/Themes/Ignyos.Tokens.xaml"/>
+        
+        <!-- Reusable text and other styles (depends on: Colors, Tokens) -->
+        <!-- Styles are in separate file to avoid resource resolution issues -->
+        <ResourceDictionary Source="pack://application:,,,/Themes/Ignyos.Styles.xaml"/>
+        
+        <!-- Button component styles (depends on: Colors, Tokens, Styles) -->
+        <ResourceDictionary Source="pack://application:,,,/Themes/Ignyos.Button.xaml"/>
+        
+        <!-- Menu component styles (depends on: Colors, Tokens, Styles) -->
+        <ResourceDictionary Source="pack://application:,,,/Themes/Ignyos.Menu.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
+</ResourceDictionary>

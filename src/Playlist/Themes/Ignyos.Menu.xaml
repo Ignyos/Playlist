@@ -1,0 +1,81 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    <!--
+      Ignyos Design System - Menu Component Styles
+      Requires: Ignyos.Colors.xaml, Ignyos.Tokens.xaml
+    -->
+
+    <!-- ========================================================= -->
+    <!-- Menu Bar Style                                            -->
+    <!-- ========================================================= -->
+    <Style x:Key="Menu.Base" TargetType="Menu">
+        <Setter Property="Background" Value="{DynamicResource Brush.Neutral.Surface}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Neutral.Text}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource FontSize.Body}"/>
+        <Setter Property="Padding" Value="8"/>
+    </Style>
+
+    <!-- ========================================================= -->
+    <!-- Menu Item Style with Popup                                -->
+    <!-- ========================================================= -->
+    <Style x:Key="MenuItem.Base" TargetType="MenuItem">
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Neutral.Text}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Primary}"/>
+        <Setter Property="FontSize" Value="{DynamicResource FontSize.Body}"/>
+        <Setter Property="Padding" Value="12,6,12,6"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <Border x:Name="border"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            Padding="{TemplateBinding Padding}"
+                            CornerRadius="4">
+                        <Grid>
+                            <ContentPresenter ContentSource="Header"
+                                            RecognizesAccessKey="True"
+                                            TextElement.Foreground="{TemplateBinding Foreground}"/>
+                            <Popup x:Name="PART_Popup"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   IsOpen="{TemplateBinding IsSubmenuOpen}"
+                                   Placement="Bottom"
+                                   PlacementTarget="{Binding ElementName=border}"
+                                   PopupAnimation="Fade">
+                                <Border Background="{DynamicResource Brush.Neutral.Surface}"
+                                        BorderBrush="{DynamicResource Brush.Neutral.Border}"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Effect="{DynamicResource Shadow.LG}"
+                                        Padding="4">
+                                    <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"
+                                                    SnapsToDevicePixels="True"/>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource Brush.Accent.Primary}"/>
+                            <Setter Property="Foreground" Value="#FFFFFF"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource Brush.Accent.Strong}"/>
+                        </Trigger>
+                        <Trigger Property="IsSubmenuOpen" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource Brush.Accent.Primary}"/>
+                            <Setter Property="Foreground" Value="#FFFFFF"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Neutral.Text.Muted}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

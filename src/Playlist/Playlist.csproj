@@ -32,6 +32,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Ensure XAML theme files are included as resources -->
+    <Resource Include="Themes\Ignyos.xaml" />
+    <Resource Include="Themes\Ignyos.Colors.xaml" />
+    <Resource Include="Themes\Ignyos.Tokens.xaml" />
+    <Resource Include="Themes\Ignyos.Styles.xaml" />
+    <Resource Include="Themes\Ignyos.Button.xaml" />
+    <Resource Include="Themes\Ignyos.Menu.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="LibVLCSharp.WPF" Version="3.9.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

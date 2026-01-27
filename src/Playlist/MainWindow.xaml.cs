@@ -947,6 +947,13 @@ public partial class MainWindow : Window
         
         System.Diagnostics.Debug.WriteLine("=== InitializeDatabase END ===");
     }
+
+    // Debug: Show style preview window
+    private void ShowStylePreview_Click(object sender, RoutedEventArgs e)
+    {
+        var previewWindow = new StylePreviewWindow();
+        previewWindow.Show();
+    }
 }
 
 // Adorner class for showing insertion point on ListBox
@@ -1006,6 +1013,7 @@ internal class ListBoxInsertionAdorner : Adorner
         }
     }
 }
+
 
 
 
