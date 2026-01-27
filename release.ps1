@@ -165,8 +165,39 @@ if ($lastTag) {
 }
 
 Write-Host "`nDiff saved to $diffFile" -ForegroundColor $SuccessColor
-Write-Host "Please review and update the file with release notes." -ForegroundColor $InfoColor
-Write-Host "Press any key when ready to continue..." -ForegroundColor $WarningColor
+
+# Generate AI prompt
+$aiPrompt = @"
+Please update RELEASE_NOTES.md for version $newVersion using the content from $diffFile
+
+Follow the style and format defined in RELEASE_NOTES_STYLE.md.
+
+Focus on:
+- User-facing changes and benefits
+- New features and improvements
+- Bug fixes and their impact
+- Breaking changes (if any)
+
+The raw git diff is in $diffFile - transform it into clear, user-friendly release notes.
+
+File locations:
+- Source diff: $diffFile
+- Target file: RELEASE_NOTES.md
+- Style guide: RELEASE_NOTES_STYLE.md
+"@
+
+# Copy prompt to clipboard
+try {
+    Set-Clipboard -Value $aiPrompt
+    Write-Host "`n✓ AI prompt copied to clipboard!" -ForegroundColor $SuccessColor
+    Write-Host "  Paste it into your AI tool to generate release notes." -ForegroundColor $InfoColor
+}
+catch {
+    Write-Host "`nAI Prompt (copy manually if clipboard failed):" -ForegroundColor $WarningColor
+    Write-Host $aiPrompt -ForegroundColor Gray
+}
+
+Write-Host "`nWhen AI has updated RELEASE_NOTES.md, press any key to continue..." -ForegroundColor $WarningColor
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 
 # Prompt to continue or cancel
@@ -180,15 +211,15 @@ if ($choice -notmatch '^y(es)?$') {
     exit 0
 }
 
-# Validate release notes file
-if (-not (Test-Path $diffFile)) {
-    Write-Host "Release notes file not found: $diffFile" -ForegroundColor $ErrorColor
+# Validate RELEASE_NOTES.md file
+if (-not (Test-Path "RELEASE_NOTES.md")) {
+    Write-Host "RELEASE_NOTES.md not found. Please create it with your release notes." -ForegroundColor $ErrorColor
     exit 1
 }
 
-$releaseNotes = Get-Content $diffFile -Raw
+$releaseNotes = Get-Content "RELEASE_NOTES.md" -Raw
 if ([string]::IsNullOrWhiteSpace($releaseNotes)) {
-    Write-Host "Release notes file is empty. Please add release notes." -ForegroundColor $ErrorColor
+    Write-Host "RELEASE_NOTES.md is empty. Please add release notes." -ForegroundColor $ErrorColor
     exit 1
 }
 
@@ -213,15 +244,10 @@ catch {
     exit 1
 }
 
-# Copy release notes to fixed filename for GitHub Actions
-Write-Host "`nPreparing release notes for GitHub..." -ForegroundColor $InfoColor
-Copy-Item $diffFile "RELEASE_NOTES.txt" -Force
-Write-Host "Release notes copied to RELEASE_NOTES.txt" -ForegroundColor $SuccessColor
-
-# Commit changes
-Write-Host "`nCommitting changes..." -ForegroundColor $InfoColor
+# Commit changes using RELEASE_NOTES.md
+Write-Host "\nCommitting changes..." -ForegroundColor $InfoColor
 git add .
-git commit -F $diffFile
+git commit -F "RELEASE_NOTES.md"
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Commit failed" -ForegroundColor $ErrorColor
