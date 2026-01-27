@@ -4,6 +4,12 @@
     <!--
       Ignyos Design System - Menu Component Styles
       Requires: Ignyos.Colors.xaml, Ignyos.Tokens.xaml
+      
+      Design: Outlined menu items with rounded corners
+      - Default: transparent background, outlined border
+      - Hover: subtle filled background, accent outline
+      - Pressed: filled background, accent text color
+      - Submenu Open: same as hover state
     -->
 
     <!-- ========================================================= -->
@@ -18,22 +24,23 @@
     </Style>
 
     <!-- ========================================================= -->
-    <!-- Menu Item Style with Popup                                -->
+    <!-- Menu Item Style - Outlined with Rounded Corners            -->
     <!-- ========================================================= -->
     <Style x:Key="MenuItem.Base" TargetType="MenuItem">
         <Setter Property="Foreground" Value="{DynamicResource Brush.Neutral.Text}"/>
         <Setter Property="FontFamily" Value="{DynamicResource Font.Primary}"/>
         <Setter Property="FontSize" Value="{DynamicResource FontSize.Body}"/>
         <Setter Property="Padding" Value="12,6,12,6"/>
+        <Setter Property="Margin" Value="0,0,8,0"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="MenuItem">
                     <Border x:Name="border"
                             Background="Transparent"
-                            BorderBrush="Transparent"
-                            BorderThickness="0"
+                            BorderBrush="{DynamicResource Brush.Neutral.Border}"
+                            BorderThickness="1"
                             Padding="{TemplateBinding Padding}"
-                            CornerRadius="4">
+                            CornerRadius="6">
                         <Grid>
                             <ContentPresenter ContentSource="Header"
                                             RecognizesAccessKey="True"
@@ -48,7 +55,7 @@
                                 <Border Background="{DynamicResource Brush.Neutral.Surface}"
                                         BorderBrush="{DynamicResource Brush.Neutral.Border}"
                                         BorderThickness="1"
-                                        CornerRadius="4"
+                                        CornerRadius="6"
                                         Effect="{DynamicResource Shadow.LG}"
                                         Padding="4">
                                     <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"
@@ -58,19 +65,29 @@
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
+                        <!-- Hover state: subtle fill with accent outline -->
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="{DynamicResource Brush.Accent.Primary}"/>
-                            <Setter Property="Foreground" Value="#FFFFFF"/>
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource Brush.Neutral.Surface.Hover}"/>
+                            <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource Brush.Accent.Primary}"/>
                         </Trigger>
+                        
+                        <!-- Pressed state: filled background with accent text -->
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="{DynamicResource Brush.Accent.Strong}"/>
-                        </Trigger>
-                        <Trigger Property="IsSubmenuOpen" Value="True">
                             <Setter TargetName="border" Property="Background" Value="{DynamicResource Brush.Accent.Primary}"/>
+                            <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource Brush.Accent.Primary}"/>
                             <Setter Property="Foreground" Value="#FFFFFF"/>
                         </Trigger>
+                        
+                        <!-- Submenu open state: same as hover (subtle fill with accent outline) -->
+                        <Trigger Property="IsSubmenuOpen" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource Brush.Neutral.Surface.Hover}"/>
+                            <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource Brush.Accent.Primary}"/>
+                        </Trigger>
+                        
+                        <!-- Disabled state -->
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{DynamicResource Brush.Neutral.Text.Muted}"/>
+                            <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource Brush.Neutral.Text.Muted}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
