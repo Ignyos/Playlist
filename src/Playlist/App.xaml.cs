@@ -25,11 +25,15 @@ public partial class App : Application
         ConfigureServices(services);
         _serviceProvider = services.BuildServiceProvider();
 
-        // Run database migrations
-        var migrationService = _serviceProvider.GetRequiredService<IMigrationService>();
+        // Run database migrations with a dedicated DbContext
         try
         {
-            migrationService.MigrateAsync().Wait();
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<PlaylistDbContext>();
+                dbContext.Database.Migrate();
+                System.Diagnostics.Debug.WriteLine("Database migrations applied successfully.");
+            }
         }
         catch (Exception ex)
         {
@@ -65,9 +69,6 @@ public partial class App : Application
                 .LogTo(message => System.Diagnostics.Debug.WriteLine(message), 
                     Microsoft.Extensions.Logging.LogLevel.Information)
         );
-
-        // Register migration service
-        services.AddScoped<IMigrationService, MigrationService>();
 
         // Register DbContext factory
         services.AddSingleton<IPlaylistDbContextFactory>(provider => new PlaylistDbContextFactory(provider));
