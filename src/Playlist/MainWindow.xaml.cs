@@ -59,6 +59,7 @@ public partial class MainWindow : Window
         // Apply startup preference stored in settings
         ApplyRunOnStartupSetting();
         
+        // Reuse the initialized DbContext for media player service
         _mediaPlayerService = new MediaPlayerService(dbContext);
         _mediaPlayerService.MediaEnded += OnMediaEnded;
         
@@ -909,6 +910,7 @@ public partial class MainWindow : Window
             // Apply all pending migrations
             System.Diagnostics.Debug.WriteLine("Running migrations...");
             dbContext.Database.Migrate();
+            dbContext.SaveChanges();
             System.Diagnostics.Debug.WriteLine("Migrations completed successfully");
         }
         catch (Exception ex)

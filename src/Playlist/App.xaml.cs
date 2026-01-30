@@ -31,14 +31,23 @@ public partial class App : Application
             using (var scope = _serviceProvider.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<PlaylistDbContext>();
+                System.Diagnostics.Debug.WriteLine("Starting database migration...");
                 dbContext.Database.Migrate();
-                System.Diagnostics.Debug.WriteLine("Database migrations applied successfully.");
+                System.Diagnostics.Debug.WriteLine("Database migration completed");
+            }
+            
+            // Verify database was created by checking if we can query a table
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<PlaylistDbContext>();
+                var tableCount = dbContext.Playlists.Count();
+                System.Diagnostics.Debug.WriteLine($"Database verification successful. Playlist count: {tableCount}");
             }
         }
         catch (Exception ex)
         {
             MessageBox.Show(
-                $"Failed to initialize the database: {ex.Message}",
+                $"Failed to initialize the database: {ex.Message}\n\n{ex.InnerException?.Message}",
                 "Initialization Error",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error

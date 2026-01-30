@@ -4,12 +4,18 @@
 Critical bug fix release addressing a database initialization issue that prevented the application from starting on fresh installations. Includes all features and improvements from v1.2.1.
 
 ## Bug Fixes
-- **Database Migration Failure**: Fixed critical issue where application failed to start on clean installs with error "no such table: Playlists". The dependency injection container now ensures database migrations complete synchronously before the main window loads any data.
+- **Database Migration Failure**: Fixed critical issue where application failed to start on clean installs with error "no such table: Playlists" or "disposed context instance". Root causes and solutions:
+  - Database migration now runs synchronously in App.OnStartup before any UI initialization
+  - Added verification query to confirm tables exist before proceeding
+  - Fixed DbContext disposal pattern: contexts from the factory are scoped and managed by the DI container; no longer manually disposed which was causing ObjectDisposedException
+  - Removed improper `using` statements around contexts obtained from the factory to respect DI container lifetime management
 
 ## Technical Changes
-- Refactored database initialization in `App.xaml.cs` to use synchronous migration with dedicated DbContext scope, ensuring all tables exist before application startup
-- Removed async migration pattern that could leave tables uninitialized when data queries began
-- Migration now runs as part of application startup completion rather than as a deferred service operation
+- Refactored database initialization in `App.xaml.cs` to run migrations synchronously in OnStartup with verification via explicit DI scopes
+- Added post-migration verification query to confirm database tables are accessible
+- Fixed DbContext lifetime management in `MainWindow.xaml.cs`: removed improper `using` statements that were disposing scoped contexts prematurely
+- DbContext instances obtained from the factory are now left for the DI container to manage their disposal, preventing ObjectDisposedException
+- Database migration now completes and validates before any UI components attempt to load data
 
 ## Previous Release (v1.2.1) Features
 
