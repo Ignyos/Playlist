@@ -1,21 +1,25 @@
-﻿# Release v1.2.2
+﻿# Release v1.2.3
 
 ## Overview
-Critical bug fix release addressing a database initialization issue that prevented the application from starting on fresh installations. Includes all features and improvements from v1.2.1.
+Stability patch release fixing database context lifetime management issue that caused application crashes on startup. All features from v1.2.1 remain available and stable.
 
 ## Bug Fixes
-- **Database Migration Failure**: Fixed critical issue where application failed to start on clean installs with error "no such table: Playlists" or "disposed context instance". Root causes and solutions:
-  - Database migration now runs synchronously in App.OnStartup before any UI initialization
-  - Added verification query to confirm tables exist before proceeding
-  - Fixed DbContext disposal pattern: contexts from the factory are scoped and managed by the DI container; no longer manually disposed which was causing ObjectDisposedException
-  - Removed improper `using` statements around contexts obtained from the factory to respect DI container lifetime management
+- **Application Startup Crash**: Fixed critical ObjectDisposedException that prevented the application from launching after the v1.2.2 database migration fix. The issue was caused by manually disposing dependency-injected DbContext instances, which are scoped and managed by the DI container
+- **Database Initialization**: Improved error messaging to include inner exception details for better diagnostics
 
 ## Technical Changes
-- Refactored database initialization in `App.xaml.cs` to run migrations synchronously in OnStartup with verification via explicit DI scopes
-- Added post-migration verification query to confirm database tables are accessible
-- Fixed DbContext lifetime management in `MainWindow.xaml.cs`: removed improper `using` statements that were disposing scoped contexts prematurely
-- DbContext instances obtained from the factory are now left for the DI container to manage their disposal, preventing ObjectDisposedException
-- Database migration now completes and validates before any UI components attempt to load data
+- Removed improper `using` statements around DbContext instances obtained from the factory - these are scoped by the DI container and should not be manually disposed
+- DbContext instances now have their lifetime properly managed by the dependency injection container throughout the application
+- Enhanced database migration process with explicit scoped contexts and post-migration verification
+- Added detailed error messages showing both primary and inner exception information during initialization failures
+
+## Previous Release (v1.2.2) Changes
+
+### Bug Fixes (v1.2.2)
+- **Database Migration Failure on Fresh Install**: Fixed critical issue where application failed to start on clean installations with "no such table: Playlists" error
+  - Database migration now runs synchronously in App.OnStartup before any UI initialization
+  - Added verification query to confirm database tables exist and are accessible
+  - Refactored database initialization to use explicit DI scopes
 
 ## Previous Release (v1.2.1) Features
 
