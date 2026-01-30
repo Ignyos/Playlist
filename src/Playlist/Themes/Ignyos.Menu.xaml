@@ -5,10 +5,10 @@
       Ignyos Design System - Menu Component Styles
       Requires: Ignyos.Colors.xaml, Ignyos.Tokens.xaml
       
-      Design: Outlined menu items with rounded corners
-      - Default: transparent background, outlined border
-      - Hover: subtle filled background, accent outline
-      - Pressed: filled background, accent text color
+      Design: Pill-style menu items based on web ig-pill component
+      - Default: subtle white transparent background with accent border
+      - Hover: subtle orange tinted background, darker border, brighter orange text (0.2s transition)
+      - Pressed: filled background with accent color
       - Submenu Open: same as hover state
     -->
 
@@ -24,10 +24,10 @@
     </Style>
 
     <!-- ========================================================= -->
-    <!-- Menu Item Style - Outlined with Rounded Corners            -->
+    <!-- Menu Item Style - Pill Style with Animated Transitions     -->
     <!-- ========================================================= -->
     <Style x:Key="MenuItem.Base" TargetType="MenuItem">
-        <Setter Property="Foreground" Value="{DynamicResource Brush.Neutral.Text}"/>
+        <Setter Property="Foreground" Value="#FFFFFF"/>
         <Setter Property="FontFamily" Value="{DynamicResource Font.Primary}"/>
         <Setter Property="FontSize" Value="{DynamicResource FontSize.Body}"/>
         <Setter Property="Padding" Value="12,6,12,6"/>
@@ -36,11 +36,11 @@
             <Setter.Value>
                 <ControlTemplate TargetType="MenuItem">
                     <Border x:Name="border"
-                            Background="Transparent"
-                            BorderBrush="{DynamicResource Brush.Neutral.Border}"
+                            Background="#01FFFFFF"
+                            BorderBrush="{DynamicResource Brush.Accent.Primary}"
                             BorderThickness="1"
                             Padding="{TemplateBinding Padding}"
-                            CornerRadius="6">
+                            CornerRadius="8">
                         <Grid>
                             <ContentPresenter ContentSource="Header"
                                             RecognizesAccessKey="True"
@@ -55,7 +55,7 @@
                                 <Border Background="{DynamicResource Brush.Neutral.Surface}"
                                         BorderBrush="{DynamicResource Brush.Neutral.Border}"
                                         BorderThickness="1"
-                                        CornerRadius="6"
+                                        CornerRadius="8"
                                         Effect="{DynamicResource Shadow.LG}"
                                         Padding="4">
                                     <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"
@@ -65,23 +65,71 @@
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
-                        <!-- Hover state: subtle fill with accent outline -->
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="{DynamicResource Brush.Neutral.Surface.Hover}"/>
-                            <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource Brush.Accent.Primary}"/>
-                        </Trigger>
+                        <!-- Hover state: only when mouse is over and NOT pressed -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                                <Condition Property="IsPressed" Value="False"/>
+                            </MultiTrigger.Conditions>
+                            <MultiTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <!-- Animate background to pill hover color (rgba(255, 155, 107, 0.08)) -->
+                                        <ColorAnimation Storyboard.TargetName="border" 
+                                                       Storyboard.TargetProperty="Background.Color" 
+                                                       To="#14FF9B6B" 
+                                                       Duration="0:0:0.2"/>
+                                        <!-- Animate border to darker gray -->
+                                        <ColorAnimation Storyboard.TargetName="border" 
+                                                       Storyboard.TargetProperty="BorderBrush.Color" 
+                                                       To="#3A3A3A" 
+                                                       Duration="0:0:0.2"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </MultiTrigger.EnterActions>
+                            <MultiTrigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <!-- Animate back to default subtle white -->
+                                        <ColorAnimation Storyboard.TargetName="border" 
+                                                       Storyboard.TargetProperty="Background.Color" 
+                                                       To="#01FFFFFF" 
+                                                       Duration="0:0:0.2"/>
+                                        <!-- Animate border back to accent -->
+                                        <ColorAnimation Storyboard.TargetName="border" 
+                                                       Storyboard.TargetProperty="BorderBrush.Color" 
+                                                       To="#C18B5A" 
+                                                       Duration="0:0:0.2"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </MultiTrigger.ExitActions>
+                            <Setter Property="Foreground" Value="#FF9B6B"/>
+                        </MultiTrigger>
                         
-                        <!-- Pressed state: filled background with accent text -->
+                        <!-- Pressed state: maintains hover appearance while pressed -->
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="{DynamicResource Brush.Accent.Primary}"/>
-                            <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource Brush.Accent.Primary}"/>
-                            <Setter Property="Foreground" Value="#FFFFFF"/>
+                            <Setter TargetName="border" Property="Background" Value="#14FF9B6B"/>
+                            <Setter TargetName="border" Property="BorderBrush" Value="#3A3A3A"/>
+                            <Setter Property="Foreground" Value="#FF9B6B"/>
                         </Trigger>
                         
-                        <!-- Submenu open state: same as hover (subtle fill with accent outline) -->
+                        <!-- Submenu open state: same as hover -->
                         <Trigger Property="IsSubmenuOpen" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="{DynamicResource Brush.Neutral.Surface.Hover}"/>
-                            <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource Brush.Accent.Primary}"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <ColorAnimation Storyboard.TargetName="border" 
+                                                       Storyboard.TargetProperty="Background.Color" 
+                                                       To="#14FF9B6B" 
+                                                       Duration="0:0:0.2"/>
+                                        <ColorAnimation Storyboard.TargetName="border" 
+                                                       Storyboard.TargetProperty="BorderBrush.Color" 
+                                                       To="#3A3A3A" 
+                                                       Duration="0:0:0.2"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Setter Property="Foreground" Value="#FF9B6B"/>
                         </Trigger>
                         
                         <!-- Disabled state -->

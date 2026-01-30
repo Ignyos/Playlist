@@ -1,0 +1,119 @@
+/* Ignyos component layer (web)
+ * Depends on tokens.css variables.
+ */
+
+.ig-container {
+    max-width: 800px;
+    margin: var(--ig-space-xs) auto;
+    padding: var(--ig-space-xl) var(--ig-space-xs);
+    position: relative;
+    z-index: 1;
+}
+
+.ig-surface {
+    background-color: var(--ig-color-surface);
+    border-radius: var(--ig-radius-lg);
+    box-shadow: var(--ig-shadow-lg);
+    overflow: hidden;
+    margin-bottom: var(--ig-space-lg);
+}
+
+.ig-surface:last-child {
+    margin-bottom: 0;
+}
+
+.ig-hero {
+    margin-bottom: var(--ig-space-xl);
+}
+
+.ig-hero-title {
+    font-size: var(--ig-font-size-display);
+    font-weight: var(--ig-font-weight-light);
+    margin-bottom: var(--ig-space-2xs);
+    color: var(--ig-color-text-strong);
+}
+
+.ig-hero-title .ig-accent {
+    color: var(--ig-color-accent);
+}
+
+.ig-lead {
+    font-size: var(--ig-font-size-body);
+    color: var(--ig-color-text-muted);
+    line-height: var(--ig-line-height-lead);
+}
+
+.ig-section-title {
+    font-size: var(--ig-font-size-heading);
+    font-weight: var(--ig-font-weight-regular);
+    margin-bottom: var(--ig-space-md);
+    color: var(--ig-color-text-strong);
+}
+
+.ig-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ig-space-md);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ig-list-item {
+    padding-bottom: var(--ig-space-md);
+    border-bottom: 1px solid var(--ig-color-border);
+}
+
+.ig-list-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.ig-item-title {
+    font-size: var(--ig-font-size-subheading);
+    font-weight: var(--ig-font-weight-regular);
+    margin-bottom: var(--ig-space-2xs);
+}
+
+.ig-item-body {
+    font-size: var(--ig-font-size-body-sm);
+    color: var(--ig-color-text-subtle);
+}
+
+.ig-pill {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--ig-color-border-strong);
+    border-color: var(--ig-color-accent);
+    border-radius: var(--ig-radius-md);
+    background-color: var(--ig-color-pill-bg);
+    color: var(--ig-color-text-strong);
+    text-decoration: none;
+    transition: all var(--ig-transition-fast);
+}
+
+.ig-pill:hover,
+.ig-pill:active,
+.ig-pill:focus-visible {
+    background-color: var(--ig-color-pill-hover-bg);
+    border-color: #3a3a3a;
+    color: var(--ig-color-accent-strong);
+}
+
+.ig-muted {
+    color: var(--ig-color-text-subtle);
+}
+
+@media (max-width: 600px) {
+    .ig-container {
+        padding: var(--ig-space-lg) var(--ig-space-sm);
+    }
+
+    .ig-hero-title {
+        font-size: var(--ig-font-size-display-mobile);
+    }
+
+    .ig-lead {
+        font-size: var(--ig-font-size-body-sm);
+    }
+}

@@ -66,9 +66,6 @@
                 <Separator />
                 <MenuItem Header="_Check for Updates" Click="CheckForUpdates_Click" Style="{StaticResource MenuItem.Base}"/>
             </MenuItem>
-            <MenuItem Header="_Debug" Style="{StaticResource MenuItem.Base}">
-                <MenuItem Header="Show Style Preview" Click="ShowStylePreview_Click" Style="{StaticResource MenuItem.Base}"/>
-            </MenuItem>
         </Menu>
 
         <!-- Main Content Area -->
