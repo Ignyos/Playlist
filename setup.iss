@@ -2,7 +2,7 @@
 ; https://jrsoftware.org/isinfo.php
 
 #define MyAppName "Playlist"
-#define MyAppVersion "1.2.3"
+#define MyAppVersion "1.2.4"
 #define MyAppPublisher "Ignyos"
 #define MyAppURL "https://playlist.ignyos.com"
 #define MyAppExeName "Playlist.exe"

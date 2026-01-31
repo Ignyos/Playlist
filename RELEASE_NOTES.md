@@ -1,25 +1,31 @@
-﻿# Release v1.2.3
+﻿# Release v1.2.4
 
 ## Overview
-Stability patch release fixing database context lifetime management issue that caused application crashes on startup. All features from v1.2.1 remain available and stable.
+Critical stability fix resolving persistent database initialization failures on fresh installations. This patch eliminates duplicate migration execution that was causing "table does not exist" errors on clean installs.
 
 ## Bug Fixes
-- **Application Startup Crash**: Fixed critical ObjectDisposedException that prevented the application from launching after the v1.2.2 database migration fix. The issue was caused by manually disposing dependency-injected DbContext instances, which are scoped and managed by the DI container
-- **Database Initialization**: Improved error messaging to include inner exception details for better diagnostics
+- **Fresh Installation Database Error**: Fixed critical issue where the application failed to start on clean installations with "table Playlists does not exist" error. The problem was caused by duplicate database migration execution with different DbContext instances, creating race conditions during initialization
+- **Build Script Preservation**: Updated release script to preserve debug installer files (timestamped builds) while only cleaning the main release installer
 
 ## Technical Changes
-- Removed improper `using` statements around DbContext instances obtained from the factory - these are scoped by the DI container and should not be manually disposed
-- DbContext instances now have their lifetime properly managed by the dependency injection container throughout the application
-- Enhanced database migration process with explicit scoped contexts and post-migration verification
-- Added detailed error messages showing both primary and inner exception information during initialization failures
+- Removed duplicate database migration call from `MainWindow.InitializeDatabase()` - migration now happens exclusively in `App.OnStartup()` before any UI initialization
+- Database migration runs once at application startup with proper scope management and verification
+- Release build script now only deletes `PlaylistSetup.exe` while preserving all timestamped debug installers
+- Eliminated race condition between multiple DbContext instances attempting migrations simultaneously
+
+## Previous Release (v1.2.3) Changes
+
+### Bug Fixes (v1.2.3)
+- **Application Startup Crash**: Fixed ObjectDisposedException that prevented the application from launching after the v1.2.2 database migration fix
+- **Database Initialization**: Improved error messaging to include inner exception details for better diagnostics
+- Removed improper `using` statements around DbContext instances - now properly managed by the DI container
 
 ## Previous Release (v1.2.2) Changes
 
 ### Bug Fixes (v1.2.2)
-- **Database Migration Failure on Fresh Install**: Fixed critical issue where application failed to start on clean installations with "no such table: Playlists" error
-  - Database migration now runs synchronously in App.OnStartup before any UI initialization
+- **Database Migration Failure on Fresh Install**: Fixed issue where application failed to start on clean installations with "no such table: Playlists" error
+  - Database migration runs synchronously in App.OnStartup before any UI initialization
   - Added verification query to confirm database tables exist and are accessible
-  - Refactored database initialization to use explicit DI scopes
 
 ## Previous Release (v1.2.1) Features
 
