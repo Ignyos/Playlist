@@ -907,11 +907,8 @@ public partial class MainWindow : Window
                 }
             }
             
-            // Apply all pending migrations
-            System.Diagnostics.Debug.WriteLine("Running migrations...");
-            dbContext.Database.Migrate();
-            dbContext.SaveChanges();
-            System.Diagnostics.Debug.WriteLine("Migrations completed successfully");
+            // Migration is now handled in App.OnStartup() - no need to run it again here
+            System.Diagnostics.Debug.WriteLine("Database initialization completed (migrations already applied in App.OnStartup)");
         }
         catch (Exception ex)
         {

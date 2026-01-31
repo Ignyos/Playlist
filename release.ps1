@@ -43,7 +43,11 @@ function Build-LocalInstaller {
     
     # Clean previous build
     if (Test-Path "publish") { Remove-Item "publish" -Recurse -Force }
-    if (Test-Path "installer") { Remove-Item "installer" -Recurse -Force }
+    
+    # Clean only the release installer, keep debug installers with timestamps
+    if (Test-Path "installer\PlaylistSetup.exe") { 
+        Remove-Item "installer\PlaylistSetup.exe" -Force
+    }
     
     # Publish
     Write-Host "Publishing application..." -ForegroundColor $InfoColor
