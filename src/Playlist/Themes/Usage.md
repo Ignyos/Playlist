@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Ignyos design system is a comprehensive dark theme for WPF applications. It provides:
+The Ignyos design system is a comprehensive light theme for WPF applications. It provides:
 - Color tokens and brush aliases
 - Typography and spacing tokens
 - Pre-styled components (Button, Menu)
@@ -105,14 +105,15 @@ Once the theme is referenced, you can use any defined resources in your XAML:
 
 ### Typography
 ```xaml
-<TextBlock Style="{StaticResource Text.Heading1}"/>
+<TextBlock Style="{StaticResource Text.Display}"/>
+<TextBlock Style="{StaticResource Text.Heading}"/>
 <TextBlock Style="{StaticResource Text.Body}"/>
-<TextBlock Style="{StaticResource Text.Caption}"/>
+<TextBlock Style="{StaticResource Text.Body.Small}"/>
 ```
 
 ### Spacing & Effects
 ```xaml
-<Border CornerRadius="{StaticResource Radius.Medium}"/>
+<Border CornerRadius="{StaticResource Radius.MD}"/>
 <Border Effect="{StaticResource Shadow.Elevation2}"/>
 ```
 
@@ -120,20 +121,21 @@ Once the theme is referenced, you can use any defined resources in your XAML:
 
 ### Brushes
 - **Accent Colors:** `Brush.Accent.Primary`, `Brush.Accent.Strong`
+- **Secondary Colors:** `Brush.Secondary.Primary`, `Brush.Secondary.Strong`
 - **Neutral Surfaces:** `Brush.Neutral.Background`, `Brush.Neutral.Surface`, `Brush.Neutral.Surface.Hover`, `Brush.Neutral.Surface.Active`
 - **Text Colors:** `Brush.Neutral.Text`, `Brush.Neutral.Text.Strong`, `Brush.Neutral.Text.Muted`
 - **Semantic:** `Brush.Semantic.Success`, `Brush.Semantic.Warning`, `Brush.Semantic.Danger`, `Brush.Semantic.Info`
 
 ### Typography
-- **Font Sizes:** `FontSize.Caption`, `FontSize.Body`, `FontSize.Subtitle`, `FontSize.Heading3`, `FontSize.Heading2`, `FontSize.Heading1`
-- **Text Styles:** `Text.Caption`, `Text.Body`, `Text.Subtitle`, `Text.Heading3`, `Text.Heading2`, `Text.Heading1`
+- **Font Sizes:** `FontSize.Display`, `FontSize.Heading`, `FontSize.SubHeading`, `FontSize.Body`, `FontSize.Body.Small`
+- **Text Styles:** `Text.Display`, `Text.Heading`, `Text.SubHeading`, `Text.Body`, `Text.Body.Small`, `Text.Muted`
 
 ### Spacing
-- **Padding/Margin:** `Spacing.XSmall` (2px), `Spacing.Small` (4px), `Spacing.Medium` (8px), `Spacing.Large` (12px), `Spacing.XLarge` (16px), `Spacing.XXLarge` (24px)
+- **Padding/Margin:** `Space.2XS` (8px), `Space.XS` (16px), `Space.SM` (24px), `Space.MD` (32px), `Space.LG` (48px), `Space.XL` (64px)
 
 ### Effects
 - **Shadows:** `Shadow.Elevation1`, `Shadow.Elevation2`, `Shadow.Elevation3`
-- **Border Radius:** `Radius.Small`, `Radius.Medium`, `Radius.Large`
+- **Border Radius:** `Radius.MD`, `Radius.LG`
 
 ## Troubleshooting
 

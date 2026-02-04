@@ -16,10 +16,10 @@
     <FontFamily x:Key="Font.Mono">Cascadia Mono, Courier New, monospace</FontFamily>
 
     <!-- Font sizes (in points) -->
-    <sys:Double x:Key="FontSize.Display">30</sys:Double>
-    <sys:Double x:Key="FontSize.Heading">18</sys:Double>
-    <sys:Double x:Key="FontSize.SubHeading">14</sys:Double>
-    <sys:Double x:Key="FontSize.Body">13</sys:Double>
+    <sys:Double x:Key="FontSize.Display">32</sys:Double>
+    <sys:Double x:Key="FontSize.Heading">20</sys:Double>
+    <sys:Double x:Key="FontSize.SubHeading">16</sys:Double>
+    <sys:Double x:Key="FontSize.Body">14</sys:Double>
     <sys:Double x:Key="FontSize.Body.Small">12</sys:Double>
 
     <!-- Font weights -->
@@ -37,7 +37,7 @@
     <Thickness x:Key="Space.2XS">8</Thickness>
     <Thickness x:Key="Space.XS">16</Thickness>
     <Thickness x:Key="Space.SM">24</Thickness>
-    <Thickness x:Key="Space.MD">40</Thickness>
+    <Thickness x:Key="Space.MD">32</Thickness>
     <Thickness x:Key="Space.LG">48</Thickness>
     <Thickness x:Key="Space.XL">64</Thickness>
 
@@ -45,7 +45,7 @@
     <!-- Border Radius (rounded corners)                           -->
     <!-- ========================================================= -->
     <CornerRadius x:Key="Radius.MD">8</CornerRadius>
-    <CornerRadius x:Key="Radius.LG">16</CornerRadius>
+    <CornerRadius x:Key="Radius.LG">12</CornerRadius>
 
     <!-- ========================================================= -->
     <!-- Animations                                                -->

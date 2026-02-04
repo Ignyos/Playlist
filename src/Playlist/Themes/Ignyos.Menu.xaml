@@ -5,18 +5,18 @@
       Ignyos Design System - Menu Component Styles
       Requires: Ignyos.Colors.xaml, Ignyos.Tokens.xaml
       
-      Design: Pill-style menu items based on web ig-pill component
-      - Default: subtle white transparent background with accent border
-      - Hover: subtle orange tinted background, darker border, brighter orange text (0.2s transition)
-      - Pressed: filled background with accent color
-      - Submenu Open: same as hover state
+      Design: Pill-style menu items based on the Ignyos design system
+      - Default: subtle surface background with neutral border
+      - Hover: slightly lighter surface, accent orange border, accent text (0.2s transition)
+      - Pressed: active surface with accent border and text
+    - Submenu Open: same as hover state
     -->
 
     <!-- ========================================================= -->
     <!-- Menu Bar Style                                            -->
     <!-- ========================================================= -->
     <Style x:Key="Menu.Base" TargetType="Menu">
-        <Setter Property="Background" Value="{DynamicResource Brush.Neutral.Surface}"/>
+        <Setter Property="Background" Value="{DynamicResource Brush.Neutral.Background}"/>
         <Setter Property="Foreground" Value="{DynamicResource Brush.Neutral.Text}"/>
         <Setter Property="FontFamily" Value="{DynamicResource Font.Primary}"/>
         <Setter Property="FontSize" Value="{DynamicResource FontSize.Body}"/>
@@ -27,7 +27,7 @@
     <!-- Menu Item Style - Pill Style with Animated Transitions     -->
     <!-- ========================================================= -->
     <Style x:Key="MenuItem.Base" TargetType="MenuItem">
-        <Setter Property="Foreground" Value="#FFFFFF"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Neutral.Text}"/>
         <Setter Property="FontFamily" Value="{DynamicResource Font.Primary}"/>
         <Setter Property="FontSize" Value="{DynamicResource FontSize.Body}"/>
         <Setter Property="Padding" Value="12,6,12,6"/>
@@ -36,11 +36,11 @@
             <Setter.Value>
                 <ControlTemplate TargetType="MenuItem">
                     <Border x:Name="border"
-                            Background="#01FFFFFF"
-                            BorderBrush="{DynamicResource Brush.Accent.Primary}"
+                            Background="{DynamicResource Brush.Neutral.Surface}"
+                            BorderBrush="{DynamicResource Brush.Neutral.Border}"
                             BorderThickness="1"
                             Padding="{TemplateBinding Padding}"
-                            CornerRadius="8">
+                            CornerRadius="{DynamicResource Radius.MD}">
                         <Grid>
                             <ContentPresenter ContentSource="Header"
                                             RecognizesAccessKey="True"
@@ -74,15 +74,15 @@
                             <MultiTrigger.EnterActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <!-- Animate background to pill hover color (rgba(255, 155, 107, 0.08)) -->
+                                        <!-- Animate background to light blue hover -->
                                         <ColorAnimation Storyboard.TargetName="border" 
                                                        Storyboard.TargetProperty="Background.Color" 
-                                                       To="#14FF9B6B" 
+                                                       To="#1a1a1a" 
                                                        Duration="0:0:0.2"/>
-                                        <!-- Animate border to darker gray -->
+                                        <!-- Animate border to soft blue -->
                                         <ColorAnimation Storyboard.TargetName="border" 
                                                        Storyboard.TargetProperty="BorderBrush.Color" 
-                                                       To="#3A3A3A" 
+                                                       To="#c18b5a" 
                                                        Duration="0:0:0.2"/>
                                     </Storyboard>
                                 </BeginStoryboard>
@@ -90,27 +90,27 @@
                             <MultiTrigger.ExitActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <!-- Animate back to default subtle white -->
+                                        <!-- Animate back to default transparent -->
                                         <ColorAnimation Storyboard.TargetName="border" 
                                                        Storyboard.TargetProperty="Background.Color" 
-                                                       To="#01FFFFFF" 
+                                                       To="#0f0f0f" 
                                                        Duration="0:0:0.2"/>
-                                        <!-- Animate border back to accent -->
+                                        <!-- Animate border back to neutral -->
                                         <ColorAnimation Storyboard.TargetName="border" 
                                                        Storyboard.TargetProperty="BorderBrush.Color" 
-                                                       To="#C18B5A" 
+                                                       To="#1a1a1a" 
                                                        Duration="0:0:0.2"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </MultiTrigger.ExitActions>
-                            <Setter Property="Foreground" Value="#FF9B6B"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Accent.Primary}"/>
                         </MultiTrigger>
                         
                         <!-- Pressed state: maintains hover appearance while pressed -->
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="#14FF9B6B"/>
-                            <Setter TargetName="border" Property="BorderBrush" Value="#3A3A3A"/>
-                            <Setter Property="Foreground" Value="#FF9B6B"/>
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource Brush.Neutral.Surface.Hover}"/>
+                            <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource Brush.Accent.Primary}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Accent.Primary}"/>
                         </Trigger>
                         
                         <!-- Submenu open state: same as hover -->
@@ -120,16 +120,16 @@
                                     <Storyboard>
                                         <ColorAnimation Storyboard.TargetName="border" 
                                                        Storyboard.TargetProperty="Background.Color" 
-                                                       To="#14FF9B6B" 
+                                                       To="#1a1a1a" 
                                                        Duration="0:0:0.2"/>
                                         <ColorAnimation Storyboard.TargetName="border" 
                                                        Storyboard.TargetProperty="BorderBrush.Color" 
-                                                       To="#3A3A3A" 
+                                                       To="#c18b5a" 
                                                        Duration="0:0:0.2"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.EnterActions>
-                            <Setter Property="Foreground" Value="#FF9B6B"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Accent.Primary}"/>
                         </Trigger>
                         
                         <!-- Disabled state -->

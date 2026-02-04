@@ -15,28 +15,28 @@
     <Style x:Key="Text.Display" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Primary}"/>
         <Setter Property="FontSize" Value="{DynamicResource FontSize.Display}"/>
-        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="FontWeight" Value="{DynamicResource FontWeight.SemiBold}"/>
         <Setter Property="Foreground" Value="{DynamicResource Brush.Neutral.Text.Strong}"/>
     </Style>
 
     <Style x:Key="Text.Heading" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Primary}"/>
         <Setter Property="FontSize" Value="{DynamicResource FontSize.Heading}"/>
-        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="FontWeight" Value="{DynamicResource FontWeight.SemiBold}"/>
         <Setter Property="Foreground" Value="{DynamicResource Brush.Neutral.Text.Strong}"/>
     </Style>
 
     <Style x:Key="Text.SubHeading" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Primary}"/>
         <Setter Property="FontSize" Value="{DynamicResource FontSize.SubHeading}"/>
-        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="FontWeight" Value="{DynamicResource FontWeight.Regular}"/>
         <Setter Property="Foreground" Value="{DynamicResource Brush.Neutral.Text}"/>
     </Style>
 
     <Style x:Key="Text.Body" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{DynamicResource Font.Primary}"/>
         <Setter Property="FontSize" Value="{DynamicResource FontSize.Body}"/>
-        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="FontWeight" Value="{DynamicResource FontWeight.Regular}"/>
         <Setter Property="Foreground" Value="{DynamicResource Brush.Neutral.Text}"/>
     </Style>
 
