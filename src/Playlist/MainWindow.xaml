@@ -33,16 +33,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
-        <!-- Style for Progress Indicator Pill -->
-        <Style x:Key="ProgressIndicatorPillStyle" TargetType="Border">
-            <Setter Property="Background" Value="White"/>
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding ProgressPercentage}" Value="100">
-                    <Setter Property="Background" Value="#C8E6C9"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
     </Window.Resources>
     <DockPanel>
         <!-- Menu Bar -->
@@ -175,13 +165,22 @@
                                 <!-- Progress Indicator Pill -->
                                 <Border Grid.Column="0" Width="50" Height="20" CornerRadius="10" 
                                         Margin="0,0,10,0"
-                                        BorderThickness="1" BorderBrush="Black"
-                                        Style="{StaticResource ProgressIndicatorPillStyle}">
-                                    <TextBlock Text="{Binding ProgressPercentage, StringFormat={}{0}%}" 
-                                               FontSize="14" 
-                                               Foreground="Black"
-                                               HorizontalAlignment="Center" 
-                                               VerticalAlignment="Center"/>
+                                        Background="#F0F0F0"
+                                        ToolTip="{Binding ProgressPercentage, StringFormat={}{0}% complete}"
+                                        ClipToBounds="True">
+                                    <Rectangle HorizontalAlignment="Left"
+                                               Fill="#66BB6A"
+                                               RadiusX="9" RadiusY="9">
+                                        <Rectangle.Width>
+                                            <MultiBinding>
+                                                <MultiBinding.Converter>
+                                                    <local:ProgressToWidthConverter/>
+                                                </MultiBinding.Converter>
+                                                <Binding Path="ProgressPercentage"/>
+                                                <Binding RelativeSource="{RelativeSource AncestorType=Border}" Path="ActualWidth"/>
+                                            </MultiBinding>
+                                        </Rectangle.Width>
+                                    </Rectangle>
                                 </Border>
                                 <!-- File Name -->
                                 <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center"/>

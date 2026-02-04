@@ -1,11 +1,13 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -18,6 +20,29 @@ using Playlist.ViewModels;
 using Playlist.Views;
 
 namespace Playlist;
+
+/// <summary>
+/// Converts progress percentage and container width to the width of the progress fill.
+/// </summary>
+public class ProgressToWidthConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (values.Length == 2 && values[0] is int percentage && values[1] is double containerWidth)
+        {
+            // Calculate the width based on percentage, accounting for border thickness
+            // Subtract 2 pixels for the 1px border on each side
+            var availableWidth = containerWidth - 2;
+            return Math.Max(0, (availableWidth * percentage / 100.0));
+        }
+        return 0.0;
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
 
 /// <summary>
 /// Interaction logic for MainWindow.xaml
