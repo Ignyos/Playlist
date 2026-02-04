@@ -145,6 +145,9 @@ public partial class MainWindow : Window
 
     private void LoadPlaylistItems(int playlistId)
     {
+        // Temporarily unhook selection changed to avoid overwriting saved selection during clear
+        PlaylistItemsListBox.SelectionChanged -= PlaylistItemsListBox_SelectionChanged;
+        
         var context = _dbContextFactory.CreateDbContext();
         var service = new PlaylistService(context);
         var items = service.GetPlaylistItems(playlistId);
@@ -176,6 +179,9 @@ public partial class MainWindow : Window
                 PlaylistItemsListBox.SelectedItem = selectedItem;
             }
         }
+        
+        // Re-hook selection changed
+        PlaylistItemsListBox.SelectionChanged += PlaylistItemsListBox_SelectionChanged;
     }
 
     private void PlaylistsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -633,6 +639,19 @@ public partial class MainWindow : Window
         PlayMedia(item, fromStart: false);
     }
 
+    private void PlaylistItemsListBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            var item = PlaylistItemsListBox.SelectedItem as PlaylistItemViewModel;
+            if (item != null)
+            {
+                PlayMedia(item, fromStart: false);
+                e.Handled = true;
+            }
+        }
+    }
+
     private void PlaylistItem_DoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
         var item = PlaylistItemsListBox.SelectedItem as PlaylistItemViewModel;
@@ -664,6 +683,14 @@ public partial class MainWindow : Window
                 return;
             }
 
+            // Save the currently selected item ID before opening media player
+            if (_selectedPlaylist != null)
+            {
+                var context = _dbContextFactory.CreateDbContext();
+                var service = new PlaylistService(context);
+                service.UpdatePlaylistSelectedItem(_selectedPlaylist.Id, item.Id);
+            }
+
             // Always create a new window instance (recreates after disposal)
             _mediaPlayerWindow = new MediaPlayerWindow(_mediaPlayerService!);
             _mediaPlayerWindow.Closed += MediaPlayerWindow_Closed;
@@ -671,8 +698,8 @@ public partial class MainWindow : Window
             _mediaPlayerWindow.Activate();
 
             // Get the actual PlaylistItem from database
-            var context = _dbContextFactory.CreateDbContext();
-            var playlistItem = context.PlaylistItems.FirstOrDefault(i => i.Id == item.Id);
+            var playlistContext = _dbContextFactory.CreateDbContext();
+            var playlistItem = playlistContext.PlaylistItems.FirstOrDefault(i => i.Id == item.Id);
             if (playlistItem == null) return;
 
             // Apply fullscreen preference

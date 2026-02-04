@@ -159,6 +159,7 @@
                 <!-- Playlist Items List -->
                 <ListBox Name="PlaylistItemsListBox" Margin="10,0,10,10" Background="White"
                          MouseDoubleClick="PlaylistItem_DoubleClick"
+                         KeyDown="PlaylistItemsListBox_KeyDown"
                          AllowDrop="True"
                          PreviewMouseLeftButtonDown="PlaylistItem_PreviewMouseLeftButtonDown"
                          MouseMove="PlaylistItem_MouseMove"
