@@ -68,6 +68,11 @@ public class PlaylistItemViewModel : ViewModelBase
             
             // TimeStamp is in seconds, Duration is in milliseconds
             var timeStampMs = TimeStamp.Value * 1000L;
+            
+            // If timestamp equals or exceeds duration, it's complete
+            if (timeStampMs >= Duration.Value)
+                return 100;
+            
             var percentage = (int)((timeStampMs * 100) / Duration.Value);
             return Math.Min(percentage, 100);
         }

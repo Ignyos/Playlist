@@ -84,6 +84,11 @@
 
                     <!-- Left: Playback buttons -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <Button Name="PreviousButton" Width="40" Height="40" Margin="0,0,5,0" 
+                                Click="Previous_Click" ToolTip="Previous"
+                                Style="{StaticResource MediaControlButtonStyle}">
+                            <TextBlock Text="⏮" FontSize="16" Foreground="White"/>
+                        </Button>
                         <Button Name="PlayPauseButton" Width="40" Height="40" Margin="0,0,5,0" 
                                 Click="PlayPause_Click" ToolTip="Play/Pause"
                                 Style="{StaticResource MediaControlButtonStyle}">
@@ -93,6 +98,11 @@
                                 Click="Stop_Click" ToolTip="Stop"
                                 Style="{StaticResource MediaControlButtonStyle}">
                             <TextBlock Text="■" FontSize="16" Foreground="White"/>
+                        </Button>
+                        <Button Name="NextButton" Width="40" Height="40" Margin="0,0,5,0" 
+                                Click="Next_Click" ToolTip="Next"
+                                Style="{StaticResource MediaControlButtonStyle}">
+                            <TextBlock Text="⏭" FontSize="16" Foreground="White"/>
                         </Button>
                     </StackPanel>
 

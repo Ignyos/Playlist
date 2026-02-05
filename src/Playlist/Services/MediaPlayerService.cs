@@ -189,12 +189,28 @@ namespace Playlist.Services
                 // Keep timestamp at duration (100%) since playback completed
                 var item = await _dbContext.PlaylistItems
                     .FirstOrDefaultAsync(i => i.Id == _currentItem.Id);
-                if (item != null && item.Duration.HasValue && item.Duration.Value > 0)
+                if (item != null)
                 {
-                    // Set timestamp to duration (in seconds) to represent 100% progress
-                    // Use rounding to avoid losing precision from integer division
-                    item.TimeStamp = (int)Math.Round(item.Duration.Value / 1000.0);
-                    await _dbContext.SaveChangesAsync();
+                    var durationMs = item.Duration.HasValue && item.Duration.Value > 0
+                        ? item.Duration.Value
+                        : _mediaPlayer.Length;
+
+                    if (durationMs > 0)
+                    {
+                        // Ensure duration is saved if it was missing
+                        if (!item.Duration.HasValue || item.Duration.Value == 0)
+                        {
+                            item.Duration = durationMs;
+                            _currentItem.Duration = durationMs;
+                        }
+
+                        // Set timestamp to duration (in seconds) to represent 100% progress
+                        // Use ceiling to avoid 99% due to truncation
+                        var endSeconds = (int)Math.Ceiling(durationMs / 1000.0);
+                        item.TimeStamp = endSeconds;
+                        _currentItem.TimeStamp = endSeconds;
+                        await _dbContext.SaveChangesAsync();
+                    }
                 }
 
                 var endedItem = _currentItem;

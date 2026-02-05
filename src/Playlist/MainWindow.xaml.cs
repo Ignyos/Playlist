@@ -30,10 +30,8 @@ public class ProgressToWidthConverter : IMultiValueConverter
     {
         if (values.Length == 2 && values[0] is int percentage && values[1] is double containerWidth)
         {
-            // Calculate the width based on percentage, accounting for border thickness
-            // Subtract 2 pixels for the 1px border on each side
-            var availableWidth = containerWidth - 2;
-            return Math.Max(0, (availableWidth * percentage / 100.0));
+            // Calculate the width based on percentage
+            return Math.Max(0, (containerWidth * percentage / 100.0));
         }
         return 0.0;
     }
@@ -716,16 +714,25 @@ public partial class MainWindow : Window
                 service.UpdatePlaylistSelectedItem(_selectedPlaylist.Id, item.Id);
             }
 
-            // Always create a new window instance (recreates after disposal)
-            _mediaPlayerWindow = new MediaPlayerWindow(_mediaPlayerService!);
-            _mediaPlayerWindow.Closed += MediaPlayerWindow_Closed;
-            _mediaPlayerWindow.Show();
-            _mediaPlayerWindow.Activate();
-
-            // Get the actual PlaylistItem from database
+            // Get the actual PlaylistItem from database and all playlist items for navigation
             var playlistContext = _dbContextFactory.CreateDbContext();
             var playlistItem = playlistContext.PlaylistItems.FirstOrDefault(i => i.Id == item.Id);
             if (playlistItem == null) return;
+
+            // Get all playlist items in order for navigation
+            var allPlaylistItems = playlistContext.PlaylistItems
+                .Where(i => i.PlaylistId == item.PlaylistId)
+                .OrderBy(i => i.Ordinal)
+                .ToList();
+            
+            var currentIndex = allPlaylistItems.FindIndex(i => i.Id == item.Id);
+
+            // Always create a new window instance (recreates after disposal)
+            _mediaPlayerWindow = new MediaPlayerWindow(_mediaPlayerService!, allPlaylistItems, currentIndex);
+            _mediaPlayerWindow.Closed += MediaPlayerWindow_Closed;
+            _mediaPlayerWindow.NavigationRequested += MediaPlayerWindow_NavigationRequested;
+            _mediaPlayerWindow.Show();
+            _mediaPlayerWindow.Activate();
 
             // Apply fullscreen preference
             var fullscreenBehavior = _settingService.GetFullscreenBehavior();
@@ -922,6 +929,45 @@ public partial class MainWindow : Window
         if (_selectedPlaylist != null)
         {
             LoadPlaylistItems(_selectedPlaylist.Id);
+        }
+    }
+
+    private async void MediaPlayerWindow_NavigationRequested(object? sender, int newIndex)
+    {
+        try
+        {
+            // Get the playlist item at the new index
+            var playlistContext = _dbContextFactory.CreateDbContext();
+            if (_selectedPlaylist == null) return;
+
+            var playlistItems = playlistContext.PlaylistItems
+                .Where(i => i.PlaylistId == _selectedPlaylist.Id)
+                .OrderBy(i => i.Ordinal)
+                .ToList();
+
+            if (newIndex >= 0 && newIndex < playlistItems.Count)
+            {
+                var newItem = playlistItems[newIndex];
+
+                // Update the selected item in the UI
+                var viewModelItem = _playlistItems.FirstOrDefault(vm => vm.Id == newItem.Id);
+                if (viewModelItem != null)
+                {
+                    PlaylistItemsListBox.SelectedItem = viewModelItem;
+                    PlaylistItemsListBox.ScrollIntoView(viewModelItem);
+                }
+
+                // Save the currently selected item
+                var service = new PlaylistService(playlistContext);
+                service.UpdatePlaylistSelectedItem(_selectedPlaylist.Id, newItem.Id);
+
+                // Play the new media
+                await _mediaPlayerService!.PlayAsync(newItem, continueFromTimestamp: false);
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error navigating media: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 

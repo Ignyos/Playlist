@@ -1,11 +1,10 @@
-using System;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
-using LibVLCSharp.Shared;
+using Playlist.Models;
 using Playlist.Services;
 
 namespace Playlist.Views
@@ -21,12 +20,18 @@ namespace Playlist.Views
         private WindowStyle _previousWindowStyle;
         private ResizeMode _previousResizeMode;
         private bool _controlsVisible = true;
+        private List<PlaylistItem> _playlistItems;
+        private int _currentIndex;
 
-        public MediaPlayerWindow(MediaPlayerService mediaPlayerService)
+        public event EventHandler<int>? NavigationRequested;
+
+        public MediaPlayerWindow(MediaPlayerService mediaPlayerService, List<PlaylistItem> playlistItems, int currentIndex)
         {
             InitializeComponent();
 
             _mediaPlayerService = mediaPlayerService;
+            _playlistItems = playlistItems;
+            _currentIndex = currentIndex;
 
             // Set the media player to the VideoView
             VideoView.MediaPlayer = _mediaPlayerService.Player;
@@ -55,6 +60,9 @@ namespace Playlist.Views
 
             // Set initial volume
             _mediaPlayerService.SetVolume((int)VolumeSlider.Value);
+            
+            // Update button states
+            UpdateNavigationButtons();
             
             // Show controls initially (this will start the hide timer)
             ShowControls();
@@ -323,6 +331,38 @@ namespace Playlist.Views
             {
                 CurrentTimeText.Text = FormatTime((long)e.NewValue);
             }
+        }
+
+        private void UpdateNavigationButtons()
+        {
+            PreviousButton.IsEnabled = _currentIndex > 0;
+            NextButton.IsEnabled = _currentIndex < _playlistItems.Count - 1;
+        }
+
+        private void Previous_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentIndex > 0)
+            {
+                _currentIndex--;
+                UpdateNavigationButtons();
+                NavigationRequested?.Invoke(this, _currentIndex);
+            }
+        }
+
+        private void Next_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentIndex < _playlistItems.Count - 1)
+            {
+                _currentIndex++;
+                UpdateNavigationButtons();
+                NavigationRequested?.Invoke(this, _currentIndex);
+            }
+        }
+
+        public void UpdateCurrentIndex(int newIndex)
+        {
+            _currentIndex = newIndex;
+            UpdateNavigationButtons();
         }
 
         private async void Window_Closing(object sender, CancelEventArgs e)

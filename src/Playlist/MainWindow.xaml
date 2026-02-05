@@ -165,9 +165,18 @@
                                 <!-- Progress Indicator Pill -->
                                 <Border Grid.Column="0" Width="50" Height="20" CornerRadius="10" 
                                         Margin="0,0,10,0"
-                                        Background="#F0F0F0"
-                                        ToolTip="{Binding ProgressPercentage, StringFormat={}{0}% complete}"
-                                        ClipToBounds="True">
+                                        Background="#F0F0F0">
+                                    <Border.ToolTip>
+                                        <ToolTip>
+                                            <TextBlock>
+                                                <Run Text="{Binding ProgressPercentage, Mode=OneWay}"/>
+                                                <Run Text="% complete"/>
+                                            </TextBlock>
+                                        </ToolTip>
+                                    </Border.ToolTip>
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="1" ShadowDepth="1" Opacity="0.3" Direction="270"/>
+                                    </Border.Effect>
                                     <Rectangle HorizontalAlignment="Left"
                                                Fill="#66BB6A"
                                                RadiusX="9" RadiusY="9">
