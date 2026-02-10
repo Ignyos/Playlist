@@ -7,8 +7,6 @@ This document defines the style and format for Playlist release notes.
 Use this as the primary template. Emoji section headers are fine (see example below).
 
 ```markdown
-# Release v{VERSION}
-
 ## Overview
 Brief summary of what this release focuses on (1-2 sentences).
 

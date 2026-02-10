@@ -1,5 +1,3 @@
-# Release v1.2.2
-
 ## Overview
 Critical stability fix addressing a database initialization issue that prevented the application from starting on fresh installations. This patch ensures all database tables are properly created before the application attempts to use them.
 

@@ -1,5 +1,3 @@
-# Release v1.2.4
-
 ## Overview
 Critical stability fix resolving persistent database initialization failures on fresh installations. This patch eliminates duplicate migration execution that was causing "table does not exist" errors on clean installs.
 

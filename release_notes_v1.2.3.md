@@ -1,5 +1,3 @@
-# Release v1.2.3
-
 ## Overview
 Stability patch addressing a critical issue where the application would crash on startup due to improper database context lifetime management. This fix ensures the dependency injection container properly manages DbContext instances throughout the application lifecycle.
 
