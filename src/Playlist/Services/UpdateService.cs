@@ -2,6 +2,7 @@ using System;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Text.Json.Serialization;
 using System.Reflection;
 
 namespace Playlist.Services
@@ -113,9 +114,16 @@ namespace Playlist.Services
 
     public class GitHubRelease
     {
+        [JsonPropertyName("tag_name")]
         public string? TagName { get; set; }
+
+        [JsonPropertyName("name")]
         public string? Name { get; set; }
+
+        [JsonPropertyName("body")]
         public string? Body { get; set; }
+
+        [JsonPropertyName("html_url")]
         public string? HtmlUrl { get; set; }
         
         public string Version => TagName?.TrimStart('v') ?? "0.0.0";
