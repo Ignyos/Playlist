@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -673,6 +674,45 @@ public partial class MainWindow : Window
                 e.Handled = true;
             }
         }
+    }
+
+    private void MainWindow_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Handled || e.Key != Key.Enter)
+        {
+            return;
+        }
+
+        if (!IsActive || IsTextInputContext(Keyboard.FocusedElement as DependencyObject))
+        {
+            return;
+        }
+
+        var item = PlaylistItemsListBox.SelectedItem as PlaylistItemViewModel;
+        if (item == null)
+        {
+            return;
+        }
+
+        PlayMedia(item, fromStart: false);
+        e.Handled = true;
+    }
+
+    private static bool IsTextInputContext(DependencyObject? focusedElement)
+    {
+        if (focusedElement == null)
+        {
+            return false;
+        }
+
+        if (focusedElement is TextBoxBase || focusedElement is PasswordBox || focusedElement is ComboBox)
+        {
+            return true;
+        }
+
+        return FindAncestor<TextBoxBase>(focusedElement) != null
+            || FindAncestor<PasswordBox>(focusedElement) != null
+            || FindAncestor<ComboBox>(focusedElement) != null;
     }
 
     private void PlaylistItem_DoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)

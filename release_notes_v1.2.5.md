@@ -1,5 +1,3 @@
-# Release v1.2.5
-
 ## Overview
 This release enhances the media player experience with keyboard navigation support and improves progress tracking accuracy to ensure videos marked as complete display 100% progress without visual artifacts.
 

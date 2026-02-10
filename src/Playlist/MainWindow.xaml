@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:Playlist"
         mc:Ignorable="d"
         Title="Playlist" Height="600" Width="900" MinHeight="400" MinWidth="600"
-        Icon="pack://application:,,,/Assets/icon.ico">
+        Icon="pack://application:,,,/Assets/icon.ico"
+        KeyDown="MainWindow_KeyDown">
     <Window.Resources>
         <Style TargetType="ListBoxItem">
             <Setter Property="Template">

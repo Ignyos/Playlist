@@ -157,6 +157,10 @@ $timestamp = Get-Date -Format "yyyy-MM-dd-HH-mm"
 $diffFile = "rc_${newVersion}_${timestamp}.txt"
 Write-Host "`nGenerating diff for release notes..." -ForegroundColor $InfoColor
 
+# Clear RELEASE_NOTES.md so it only contains notes for the new release
+Write-Host "Clearing RELEASE_NOTES.md to start fresh..." -ForegroundColor $InfoColor
+"" | Set-Content "RELEASE_NOTES.md" -Encoding utf8
+
 # Get last tag, or use empty tree if no tags exist (first release)
 $lastTag = git describe --tags --abbrev=0 2>&1 | Where-Object { $_ -is [string] }
 if ($lastTag) {
