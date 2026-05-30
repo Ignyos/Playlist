@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Text.Json.Serialization;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace Playlist.Services
 {
@@ -34,13 +35,31 @@ namespace Playlist.Services
                     };
                 }
 
-                var isNewer = IsNewerVersion(currentVersion, latestVersion.Version);
+                if (!TryParseVersion(currentVersion, out var currentParsed))
+                {
+                    return new UpdateCheckResult
+                    {
+                        IsUpdateAvailable = false,
+                        ErrorMessage = "Unable to determine the current application version."
+                    };
+                }
+
+                if (!TryParseVersion(latestVersion.Version, out var latestParsed))
+                {
+                    return new UpdateCheckResult
+                    {
+                        IsUpdateAvailable = false,
+                        ErrorMessage = "Unable to parse the latest release version from GitHub."
+                    };
+                }
+
+                var isNewer = latestParsed > currentParsed;
 
                 return new UpdateCheckResult
                 {
                     IsUpdateAvailable = isNewer,
-                    CurrentVersion = currentVersion,
-                    LatestVersion = latestVersion.Version,
+                    CurrentVersion = FormatVersion(currentParsed),
+                    LatestVersion = FormatVersion(latestParsed),
                     DownloadUrl = latestVersion.HtmlUrl ?? string.Empty,
                     ReleaseNotes = latestVersion.Body ?? string.Empty
                 };
@@ -57,8 +76,15 @@ namespace Playlist.Services
 
         public string GetCurrentVersion()
         {
-            var version = Assembly.GetExecutingAssembly().GetName().Version;
-            return $"{version?.Major}.{version?.Minor}.{version?.Build}";
+            var version = Assembly.GetEntryAssembly()?.GetName().Version
+                ?? Assembly.GetExecutingAssembly().GetName().Version;
+
+            if (version == null)
+            {
+                return "0.0.0";
+            }
+
+            return FormatVersion(version);
         }
 
         private async Task<GitHubRelease?> GetLatestVersionFromGitHubAsync()
@@ -82,24 +108,37 @@ namespace Playlist.Services
             }
         }
 
-        private bool IsNewerVersion(string currentVersion, string latestVersion)
+        private static bool TryParseVersion(string input, out Version version)
         {
-            try
-            {
-                // Remove 'v' prefix if present
-                currentVersion = currentVersion.TrimStart('v');
-                latestVersion = latestVersion.TrimStart('v');
+            version = new Version(0, 0, 0);
 
-                var current = Version.Parse(currentVersion);
-                var latest = Version.Parse(latestVersion);
-
-                return latest > current;
-            }
-            catch
+            if (string.IsNullOrWhiteSpace(input))
             {
                 return false;
             }
+
+            var match = Regex.Match(input, @"\d+(?:\.\d+){1,3}");
+            if (!match.Success)
+            {
+                return false;
+            }
+
+            if (!Version.TryParse(match.Value, out var parsed) || parsed == null)
+            {
+                return false;
+            }
+
+            version = parsed;
+            return true;
         }
+
+        private static string FormatVersion(Version version)
+        {
+            var build = version.Build >= 0 ? version.Build : 0;
+            return $"{version.Major}.{version.Minor}.{build}";
+        }
+
+        
     }
 
     public class UpdateCheckResult
