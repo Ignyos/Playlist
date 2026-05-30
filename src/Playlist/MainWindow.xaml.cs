@@ -663,6 +663,28 @@ public partial class MainWindow : Window
         PlayMedia(item, fromStart: false);
     }
 
+    private void MarkItemCompleted_Click(object sender, RoutedEventArgs e)
+    {
+        var item = PlaylistItemsListBox.SelectedItem as PlaylistItemViewModel;
+        if (item == null) return;
+
+        try
+        {
+            var context = _dbContextFactory.CreateDbContext();
+            var service = new PlaylistService(context);
+            service.MarkPlaylistItemCompleted(item.Id);
+
+            if (_selectedPlaylist != null)
+            {
+                LoadPlaylistItems(_selectedPlaylist.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error marking item as completed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     private void PlaylistItemsListBox_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.Enter)
