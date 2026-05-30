@@ -1,18 +1,21 @@
+# Release v1.2.7
+
 ## Overview
-This release improves playback convenience and restores reliable update checks so you can start videos quickly and stay current without friction.
+This release fixes update detection so Check for Updates reports the correct result.
 
 ## New Features
-- **App-Wide Enter to Play**: Press Enter to start (or resume) the selected playlist item whenever the app is active, even if the list isn’t focused.
+- **Version Parsing**: Update checks now handle release tag formats more reliably.
 
 ## Improvements
-- **Playback Accessibility**: Keeps keyboard playback responsive while avoiding unintended triggers when typing in text fields.
+- **Update Messages**: Parsing failures now show a clear error instead of a false up-to-date message.
+- **Version Display**: Current and latest version values are shown in a consistent format.
 
 ## Bug Fixes
-- **Check for Updates**: Fixes GitHub release parsing so update checks report the correct latest version and availability.
+- **Check for Updates**: Fixed an issue where the app could always report "latest version".
 
 ## Technical Changes
-- Release workflow now pulls notes directly from RELEASE_NOTES.md for GitHub releases.
-- Added a backfill utility to generate historical release note drafts from tag diffs.
+- Removed obsolete helper and migration scripts.
+- Simplified update-service version comparison logic.
 
 ## Breaking Changes (if any)
 - None.
