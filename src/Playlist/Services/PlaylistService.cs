@@ -192,6 +192,35 @@ public class PlaylistService
         }
     }
 
+    public void MarkPlaylistItemCompleted(int itemId)
+    {
+        var item = _context.PlaylistItems.Find(itemId);
+        if (item == null || item.DeleteDate != null)
+        {
+            return;
+        }
+
+        var durationMs = item.Duration.GetValueOrDefault();
+
+        if (durationMs <= 0)
+        {
+            // No known duration: use a minimal synthetic duration/timestamp pair to represent 100%.
+            item.Duration = 1000;
+            item.TimeStamp = 1;
+            _context.SaveChanges();
+            return;
+        }
+
+        var currentMs = item.TimeStamp.GetValueOrDefault() * 1000L;
+        if (currentMs >= durationMs)
+        {
+            return;
+        }
+
+        item.TimeStamp = (int)Math.Ceiling(durationMs / 1000.0);
+        _context.SaveChanges();
+    }
+
     public void UpdatePlaylistSelectedItem(int playlistId, int? selectedItemId)
     {
         var playlist = _context.Playlists.Find(playlistId);

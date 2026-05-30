@@ -201,6 +201,7 @@
                         <ContextMenu>
                             <MenuItem Header="Play From Beginning" Click="PlayItem_Click" />
                             <MenuItem Header="Continue" Click="ContinueItem_Click" />
+                            <MenuItem Header="Mark as Completed" Click="MarkItemCompleted_Click" />
                             <Separator />
                             <MenuItem Header="Rename" Click="RenameItem_Click" />
                             <MenuItem Header="Remove" Click="RemoveItem_Click" />
