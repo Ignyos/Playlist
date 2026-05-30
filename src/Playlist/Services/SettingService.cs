@@ -18,6 +18,18 @@ public interface ISettingService
     bool GetRunOnStartup();
 
     void SetRunOnStartup(bool enabled);
+
+    DateTime? GetLastUpdateCheckAttemptUtc();
+
+    void SetLastUpdateCheckAttemptUtc(DateTime utcTimestamp);
+
+    bool GetLastKnownUpdateAvailable();
+
+    string GetLastKnownUpdateVersion();
+
+    string GetLastKnownUpdateDownloadUrl();
+
+    void SetLastKnownUpdateStatus(bool isAvailable, string latestVersion, string downloadUrl);
 }
 
 public class SettingService : ISettingService
@@ -27,6 +39,10 @@ public class SettingService : ISettingService
     private const string SelectedPlaylistIdKey = "SelectedPlaylistId";
     private const string FullscreenBehaviorKey = "FullscreenBehavior";
     private const string RunOnStartupKey = "RunOnStartup";
+    private const string LastUpdateCheckAttemptUtcKey = "LastUpdateCheckAttemptUtc";
+    private const string LastKnownUpdateAvailableKey = "LastKnownUpdateAvailable";
+    private const string LastKnownUpdateVersionKey = "LastKnownUpdateVersion";
+    private const string LastKnownUpdateDownloadUrlKey = "LastKnownUpdateDownloadUrl";
 
     public SettingService()
     {
@@ -37,71 +53,95 @@ public class SettingService : ISettingService
     
     public string GetSelectedPlaylistId()
     {
-        var context = _dbContextFactory.CreateDbContext();
-        var setting = context.Settings.Find(SelectedPlaylistIdKey);
-        return setting?.Value ?? string.Empty;
+        return GetSettingValue(SelectedPlaylistIdKey, string.Empty);
     }
 
     public void SetSelectedPlaylistId(string playlistId)
     {
-        var context = _dbContextFactory.CreateDbContext();
-        var setting = context.Settings.Find(SelectedPlaylistIdKey);
-        if (setting == null)
-        {
-            setting = new Models.Setting { Key = SelectedPlaylistIdKey, Value = playlistId };
-            context.Settings.Add(setting);
-        }
-        else
-        {
-            setting.Value = playlistId;
-        }
-        context.SaveChanges();
+        SetSettingValue(SelectedPlaylistIdKey, playlistId);
     }
 
     public string GetFullscreenBehavior()
     {
-        var context = _dbContextFactory.CreateDbContext();
-        var setting = context.Settings.Find(FullscreenBehaviorKey);
-        return setting?.Value ?? "Auto";
+        return GetSettingValue(FullscreenBehaviorKey, "Auto");
     }
 
     public void SetFullscreenBehavior(string behavior)
     {
-        var context = _dbContextFactory.CreateDbContext();
-        var setting = context.Settings.Find(FullscreenBehaviorKey);
-        if (setting == null)
-        {
-            setting = new Models.Setting { Key = FullscreenBehaviorKey, Value = behavior };
-            context.Settings.Add(setting);
-        }
-        else
-        {
-            setting.Value = behavior;
-        }
-        context.SaveChanges();
+        SetSettingValue(FullscreenBehaviorKey, behavior);
     }
 
     public bool GetRunOnStartup()
     {
-        var context = _dbContextFactory.CreateDbContext();
-        var setting = context.Settings.Find(RunOnStartupKey);
-        var value = setting?.Value;
+        var value = GetSettingValue(RunOnStartupKey, bool.FalseString);
         return bool.TryParse(value, out var enabled) && enabled;
     }
 
     public void SetRunOnStartup(bool enabled)
     {
+        SetSettingValue(RunOnStartupKey, enabled.ToString());
+    }
+
+    public DateTime? GetLastUpdateCheckAttemptUtc()
+    {
+        var rawValue = GetSettingValue(LastUpdateCheckAttemptUtcKey, string.Empty);
+        if (DateTime.TryParse(rawValue, null, System.Globalization.DateTimeStyles.RoundtripKind, out var parsed))
+        {
+            return parsed.ToUniversalTime();
+        }
+
+        return null;
+    }
+
+    public void SetLastUpdateCheckAttemptUtc(DateTime utcTimestamp)
+    {
+        SetSettingValue(LastUpdateCheckAttemptUtcKey, utcTimestamp.ToUniversalTime().ToString("O"));
+    }
+
+    public bool GetLastKnownUpdateAvailable()
+    {
+        var rawValue = GetSettingValue(LastKnownUpdateAvailableKey, bool.FalseString);
+        return bool.TryParse(rawValue, out var isAvailable) && isAvailable;
+    }
+
+    public string GetLastKnownUpdateVersion()
+    {
+        return GetSettingValue(LastKnownUpdateVersionKey, string.Empty);
+    }
+
+    public string GetLastKnownUpdateDownloadUrl()
+    {
+        return GetSettingValue(LastKnownUpdateDownloadUrlKey, string.Empty);
+    }
+
+    public void SetLastKnownUpdateStatus(bool isAvailable, string latestVersion, string downloadUrl)
+    {
+        SetSettingValue(LastKnownUpdateAvailableKey, isAvailable.ToString());
+        SetSettingValue(LastKnownUpdateVersionKey, isAvailable ? latestVersion : string.Empty);
+        SetSettingValue(LastKnownUpdateDownloadUrlKey, isAvailable ? downloadUrl : string.Empty);
+    }
+
+    private string GetSettingValue(string key, string defaultValue)
+    {
         var context = _dbContextFactory.CreateDbContext();
-        var setting = context.Settings.Find(RunOnStartupKey);
+        var setting = context.Settings.Find(key);
+        return setting?.Value ?? defaultValue;
+    }
+
+    private void SetSettingValue(string key, string value)
+    {
+        var context = _dbContextFactory.CreateDbContext();
+        var setting = context.Settings.Find(key);
         if (setting == null)
         {
-            setting = new Models.Setting { Key = RunOnStartupKey, Value = enabled.ToString() };
+            setting = new Models.Setting { Key = key, Value = value };
             context.Settings.Add(setting);
         }
         else
         {
-            setting.Value = enabled.ToString();
+            setting.Value = value;
         }
+
         context.SaveChanges();
     }
 }

@@ -13,6 +13,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Playlist.Data;
@@ -50,6 +51,7 @@ public partial class MainWindow : Window
 {
     private readonly IPlaylistDbContextFactory _dbContextFactory;
     private readonly ISettingService _settingService;
+    private readonly UpdateService _updateService;
     private readonly ObservableCollection<PlaylistViewModel> _playlists;
     private readonly ObservableCollection<PlaylistItemViewModel> _playlistItems;
     private PlaylistViewModel? _selectedPlaylist;
@@ -59,6 +61,12 @@ public partial class MainWindow : Window
     private int _dragTargetIndex = -1; // Track which item index we're dragging over
     private MediaPlayerService? _mediaPlayerService;
     private MediaPlayerWindow? _mediaPlayerWindow;
+    private DispatcherTimer? _updateCheckTimer;
+    private bool _isUpdateCheckRunning;
+    private bool _isInlineUpdateDownloadRunning;
+    private string _inlineUpdateDownloadUrl = string.Empty;
+    private static readonly TimeSpan UpdateCheckInterval = TimeSpan.FromHours(24);
+    private static readonly TimeSpan UpdateCheckPollInterval = TimeSpan.FromMinutes(5);
 
     public MainWindow()
     {
@@ -68,6 +76,7 @@ public partial class MainWindow : Window
         var app = (App)Application.Current;
         _dbContextFactory = app.ServiceProvider.GetRequiredService<IPlaylistDbContextFactory>();
         _settingService = app.ServiceProvider.GetRequiredService<ISettingService>();
+        _updateService = new UpdateService();
         
         // Set title with version
         var version = Assembly.GetExecutingAssembly().GetName().Version;
@@ -98,6 +107,113 @@ public partial class MainWindow : Window
         
         // Restore previously selected playlist
         RestoreSelectedPlaylist();
+
+        Loaded += MainWindow_Loaded;
+    }
+
+    private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+        ApplyCachedUpdateNotice();
+        StartUpdateCheckScheduler();
+        await RunBackgroundUpdateCheckIfDueAsync(force: false);
+    }
+
+    private void StartUpdateCheckScheduler()
+    {
+        _updateCheckTimer = new DispatcherTimer
+        {
+            Interval = UpdateCheckPollInterval
+        };
+        _updateCheckTimer.Tick += async (_, _) => await RunBackgroundUpdateCheckIfDueAsync(force: false);
+        _updateCheckTimer.Start();
+    }
+
+    private bool IsUpdateCheckDue()
+    {
+        var lastAttempt = _settingService.GetLastUpdateCheckAttemptUtc();
+        if (lastAttempt == null)
+        {
+            return true;
+        }
+
+        return DateTime.UtcNow - lastAttempt.Value >= UpdateCheckInterval;
+    }
+
+    private void ApplyCachedUpdateNotice()
+    {
+        var isAvailable = _settingService.GetLastKnownUpdateAvailable();
+        var downloadUrl = _settingService.GetLastKnownUpdateDownloadUrl();
+        var latestVersion = _settingService.GetLastKnownUpdateVersion();
+
+        if (isAvailable && !string.IsNullOrWhiteSpace(downloadUrl))
+        {
+            SetUpdateNoticeVisible(true, downloadUrl, latestVersion);
+        }
+        else
+        {
+            SetUpdateNoticeVisible(false, string.Empty, string.Empty);
+        }
+    }
+
+    private async Task RunBackgroundUpdateCheckIfDueAsync(bool force)
+    {
+        if (_isUpdateCheckRunning)
+        {
+            return;
+        }
+
+        if (!force && !IsUpdateCheckDue())
+        {
+            return;
+        }
+
+        _isUpdateCheckRunning = true;
+        _settingService.SetLastUpdateCheckAttemptUtc(DateTime.UtcNow);
+
+        try
+        {
+            var result = await _updateService.CheckForUpdatesAsync();
+
+            if (string.IsNullOrWhiteSpace(result.ErrorMessage))
+            {
+                if (result.IsUpdateAvailable && !string.IsNullOrWhiteSpace(result.DownloadUrl))
+                {
+                    _settingService.SetLastKnownUpdateStatus(true, result.LatestVersion, result.DownloadUrl);
+                    SetUpdateNoticeVisible(true, result.DownloadUrl, result.LatestVersion);
+                }
+                else
+                {
+                    _settingService.SetLastKnownUpdateStatus(false, string.Empty, string.Empty);
+                    SetUpdateNoticeVisible(false, string.Empty, string.Empty);
+                }
+            }
+        }
+        catch
+        {
+            // Keep failures silent in background mode.
+        }
+        finally
+        {
+            _isUpdateCheckRunning = false;
+        }
+    }
+
+    private void SetUpdateNoticeVisible(bool isVisible, string downloadUrl, string latestVersion)
+    {
+        _inlineUpdateDownloadUrl = isVisible ? downloadUrl : string.Empty;
+
+        UpdateNoticeMenuItem.Visibility = isVisible ? Visibility.Visible : Visibility.Collapsed;
+        if (!isVisible)
+        {
+            UpdateNoticeMenuItem.Header = "New Version Available!";
+            UpdateNoticeMenuItem.IsEnabled = true;
+            return;
+        }
+
+        UpdateNoticeMenuItem.Header = string.IsNullOrWhiteSpace(latestVersion)
+            ? "New Version Available!"
+            : $"New Version Available! ({latestVersion})";
+        UpdateNoticeMenuItem.IsEnabled = !_isInlineUpdateDownloadRunning;
     }
 
     private void RestoreSelectedPlaylist()
@@ -913,11 +1029,44 @@ public partial class MainWindow : Window
 
     private void CheckForUpdates_Click(object sender, RoutedEventArgs e)
     {
+        _settingService.SetLastUpdateCheckAttemptUtc(DateTime.UtcNow);
+
         var updateWindow = new Views.UpdateCheckWindow
         {
             Owner = this
         };
         updateWindow.ShowDialog();
+    }
+
+    private async void UpdateNotice_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isInlineUpdateDownloadRunning || string.IsNullOrWhiteSpace(_inlineUpdateDownloadUrl))
+        {
+            return;
+        }
+
+        _isInlineUpdateDownloadRunning = true;
+        UpdateNoticeMenuItem.Header = "Downloading update...";
+        UpdateNoticeMenuItem.IsEnabled = false;
+
+        try
+        {
+            var installerPath = await _updateService.DownloadInstallerAsync(_inlineUpdateDownloadUrl);
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = installerPath,
+                UseShellExecute = true
+            });
+
+            Application.Current.Shutdown();
+        }
+        catch (Exception ex)
+        {
+            _isInlineUpdateDownloadRunning = false;
+            SetUpdateNoticeVisible(true, _inlineUpdateDownloadUrl, _settingService.GetLastKnownUpdateVersion());
+            MessageBox.Show($"Unable to download or start the installer: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void OpenUrl(string url)
@@ -1035,6 +1184,12 @@ public partial class MainWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
+        if (_updateCheckTimer != null)
+        {
+            _updateCheckTimer.Stop();
+            _updateCheckTimer = null;
+        }
+
         // Clean up media player resources
         _mediaPlayerService?.Dispose();
         _mediaPlayerWindow?.Close();

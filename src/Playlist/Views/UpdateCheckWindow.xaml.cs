@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using Playlist.Services;
 
@@ -52,7 +53,7 @@ namespace Playlist.Views
                 StatusMessage.Text = $"A new version of Playlist is available!";
                 VersionInfo.Text = $"Current version: {result.CurrentVersion}\nLatest version: {result.LatestVersion}";
                 
-                _downloadUrl = "https://playlist.ignyos.com";
+                _downloadUrl = result.DownloadUrl;
                 DownloadButton.Visibility = Visibility.Visible;
             }
             else
@@ -75,20 +76,28 @@ namespace Playlist.Views
             VersionInfo.Text = $"Current version: {currentVersion}";
         }
 
-        private void DownloadButton_Click(object sender, RoutedEventArgs e)
+        private async void DownloadButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
+                DownloadButton.IsEnabled = false;
+                DownloadButton.Content = "Downloading...";
+
+                var installerPath = await _updateService.DownloadInstallerAsync(_downloadUrl);
+
                 Process.Start(new ProcessStartInfo
                 {
-                    FileName = _downloadUrl,
+                    FileName = installerPath,
                     UseShellExecute = true
                 });
-                Close();
+
+                Application.Current.Shutdown();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Unable to open browser: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                DownloadButton.IsEnabled = true;
+                DownloadButton.Content = "Download Update";
+                MessageBox.Show($"Unable to download or start the installer: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

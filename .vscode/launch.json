@@ -14,11 +14,9 @@
         },
         {
             "name": "Run Release Script",
-            "type": "PowerShell",
+            "type": "node-terminal",
             "request": "launch",
-            "preLaunchTask": "run-release",
-            "script": "${workspaceFolder}/release.ps1",
-            "cwd": "${workspaceFolder}"
+            "command": "powershell -ExecutionPolicy Bypass -File \"${workspaceFolder}/release.ps1\""
         }
     ]
 }

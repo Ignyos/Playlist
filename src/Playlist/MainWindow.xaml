@@ -51,6 +51,11 @@
                 <Separator />
                 <MenuItem Header="_Check for Updates" Click="CheckForUpdates_Click" />
             </MenuItem>
+            <MenuItem Name="UpdateNoticeMenuItem"
+                      Header="New Version Available!"
+                      Foreground="#16A34A"
+                      Click="UpdateNotice_Click"
+                      Visibility="Collapsed" />
         </Menu>
 
         <!-- Main Content Area -->

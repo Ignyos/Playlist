@@ -101,6 +101,11 @@ function Revert-VersionChange {
     Write-Host "Version reverted to $OriginalVersion" -ForegroundColor $WarningColor
 }
 
+function Revert-LocalBuildChanges {
+    Write-Host "Reverting local build changes..." -ForegroundColor $WarningColor
+    git checkout -- src\Playlist\Playlist.csproj setup.iss 2>$null
+}
+
 # Main script
 Write-Host "=== Playlist Release Script ===" -ForegroundColor $InfoColor
 Write-Host ""
@@ -110,8 +115,11 @@ $currentBranch = git rev-parse --abbrev-ref HEAD
 $isMainBranch = $currentBranch -eq "main"
 
 Write-Host "Current branch: $currentBranch" -ForegroundColor $(if ($isMainBranch) { $SuccessColor } else { $WarningColor })
-if (-not $isMainBranch) {
-    Write-Host "Note: Tags will only be created and pushed from the main branch" -ForegroundColor $WarningColor
+if ($isMainBranch) {
+    Write-Host "Main branch is production-only. Test builds must use develop or a working branch." -ForegroundColor $InfoColor
+}
+else {
+    Write-Host "Non-main branch detected. This run will create a local test build only." -ForegroundColor $WarningColor
 }
 Write-Host ""
 
@@ -119,36 +127,71 @@ Write-Host ""
 $currentVersion = Get-CurrentVersion
 Write-Host "Current version: $currentVersion" -ForegroundColor $InfoColor
 
-# Prompt for new version
-$newVersionInput = Read-Host "New version [$currentVersion]"
-$newVersion = if ([string]::IsNullOrWhiteSpace($newVersionInput)) { $currentVersion } else { $newVersionInput }
+function Is-VersionGreater {
+    param(
+        [string]$Left,
+        [string]$Right
+    )
 
-# If version unchanged, build local installer and exit
-if ($newVersion -eq $currentVersion) {
+    return ([version]$Left) -gt ([version]$Right)
+}
+
+# Non-main branches are local-test-only and never publish.
+if (-not $isMainBranch) {
+    Write-Host "`n=== Test/Dev Release Build ===" -ForegroundColor $WarningColor
+    Write-Host "Creating a local test/dev installer only." -ForegroundColor $InfoColor
+    Write-Host "This path skips diff generation, diff files, AI prompt creation, release notes, tagging, and publishing." -ForegroundColor $InfoColor
+
+    $newVersionInput = Read-Host "Test/develop version [$currentVersion]"
+    $newVersion = if ([string]::IsNullOrWhiteSpace($newVersionInput)) { $currentVersion } else { $newVersionInput }
+
+    if ($newVersion -notmatch '^\d+\.\d+\.\d+$') {
+        Write-Host "Invalid version format. Use X.Y.Z (e.g., 1.0.1)" -ForegroundColor $ErrorColor
+        exit 1
+    }
+
     $timestamp = Get-Date -Format "yyyy-MM-dd-HH-mm"
-    $localVersion = "$currentVersion-$timestamp"
-    Write-Host "`nBuilding local installer (no version change)..." -ForegroundColor $InfoColor
-    
+    $localVersion = "$newVersion-$timestamp"
+    $projectVersionChanged = $newVersion -ne $currentVersion
+
+    Write-Host "Requested test/dev version: $newVersion" -ForegroundColor $InfoColor
+    Write-Host "Output installer version: $localVersion" -ForegroundColor $InfoColor
+    Write-Host "" 
+    Write-Host "Building local test installer..." -ForegroundColor $InfoColor
+
     try {
+        if ($projectVersionChanged) {
+            Set-ProjectVersion -NewVersion $newVersion
+        }
+
         Build-LocalInstaller -Version $localVersion -IsDevBuild $true
-        Write-Host "`nLocal build complete!" -ForegroundColor $SuccessColor
-        
-        # Revert setup.iss changes
-        Write-Host "Reverting setup.iss..." -ForegroundColor $InfoColor
-        git checkout -- setup.iss 2>$null
+        Write-Host "`nLocal test build complete!" -ForegroundColor $SuccessColor
     }
     catch {
         Write-Host "Build failed: $_" -ForegroundColor $ErrorColor
-        git checkout -- setup.iss 2>$null
+        Revert-LocalBuildChanges
         exit 1
     }
-    
+    finally {
+        Revert-LocalBuildChanges
+    }
+
+    Write-Host "Temporary version changes were reverted. The working tree is back to the original production version values." -ForegroundColor $InfoColor
+
     exit 0
 }
 
-# Validate new version format
+$newVersionInput = Read-Host "New production version [$currentVersion]"
+$newVersion = if ([string]::IsNullOrWhiteSpace($newVersionInput)) { $currentVersion } else { $newVersionInput }
+
 if ($newVersion -notmatch '^\d+\.\d+\.\d+$') {
     Write-Host "Invalid version format. Use X.Y.Z (e.g., 1.0.1)" -ForegroundColor $ErrorColor
+    exit 1
+}
+
+# Main branch: production release only.
+if (-not (Is-VersionGreater -Left $newVersion -Right $currentVersion)) {
+    Write-Host "Main branch releases must move forward. Use develop or a working branch for test builds." -ForegroundColor $ErrorColor
     exit 1
 }
 
@@ -197,7 +240,7 @@ File locations:
 # Copy prompt to clipboard
 try {
     Set-Clipboard -Value $aiPrompt
-    Write-Host "`n✓ AI prompt copied to clipboard!" -ForegroundColor $SuccessColor
+    Write-Host "`nAI prompt copied to clipboard!" -ForegroundColor $SuccessColor
     Write-Host "  Paste it into your AI tool to generate release notes." -ForegroundColor $InfoColor
 }
 catch {

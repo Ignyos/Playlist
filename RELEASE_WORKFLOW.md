@@ -13,6 +13,7 @@ The project uses a dual-mode release script (`release.ps1`) that supports both:
 ### Branch Strategy
 
 - **`main`** - Production-ready code, releases only
+- **`develop`** - Integration branch for testing and pre-release validation
 - **Feature branches** - All development work (e.g., `feature/style-changes`)
 
 ### Development Process
@@ -40,20 +41,34 @@ The project uses a dual-mode release script (`release.ps1`) that supports both:
 
 Use this for local testing without creating a release.
 
+Branch rules:
+- Run test builds from `develop` or a working branch.
+- `main` is production-only and will reject non-forward or test-style version runs.
+- Non-main branches never create tags, never push, and never publish to GitHub.
+- Non-main test builds skip release-note generation entirely.
+
 1. Run the release script:
    ```powershell
    .\release.ps1
    ```
 
-2. When prompted for version, **press Enter** to keep the current version
+2. The script first announces that this is a **test/dev release build** and that it will skip release-note generation and publishing.
 
-3. The script will:
+3. When prompted for the **test/develop version**, either:
+   - **Press Enter** to keep the current version, or
+   - **Enter a lower or alternate test version** such as `1.2.1`
+
+4. The script will:
+   - Temporarily update `src/Playlist/Playlist.csproj` if needed for the test build
    - Build the application
    - Create a timestamped installer: `PlaylistSetup_YYYY-MM-DD-HH-mm.exe`
-   - Revert temporary changes to `setup.iss`
+   - Revert temporary changes to `src/Playlist/Playlist.csproj` and `setup.iss`
+   - Skip `RELEASE_NOTES.md`, rc_ diff generation, tagging, and publishing
    - **No git commit, tag, or push**
 
-4. Find your installer in the `installer/` directory
+5. Find your installer in the `installer/` directory
+
+6. After the build finishes, the working tree returns to the original production version values unless you make additional manual edits yourself
 
 ### Release Builds (Production)
 
@@ -70,6 +85,10 @@ Use this when ready to publish a new version.
    ```
 
 3. **Enter the new version** when prompted (e.g., `1.0.0`, `1.1.0`)
+
+   Production rule:
+   - The version entered on `main` must be greater than the current project version.
+   - If it is equal to or less than the current version, the script stops and instructs you to use `develop` or a working branch for test builds.
 
 4. The script will:
    - Update version in `src/Playlist/Playlist.csproj`
@@ -107,12 +126,13 @@ Use this when ready to publish a new version.
 
 ### Key Features
 
-- **Branch checking** - Warns if not on main (but allows continuation)
+- **Branch enforcement** - `main` is production-only; non-main branches are local-test-only
 - **Version validation** - Ensures semantic versioning format
+- **Version safety on test builds** - Temporarily applies test versions on non-main branches and reverts them after the build
 - **Automatic diff generation** - Shows all changes since last tag
 - **RC file preservation** - Release candidate files kept for reference
 - **Revert on cancel** - Safely backs out changes if you cancel
-- **Dev build cleanup** - Reverts `setup.iss` after development builds
+- **Dev build cleanup** - Reverts `src/Playlist/Playlist.csproj` and `setup.iss` after development builds
 
 ### Release Notes Files
 
@@ -169,6 +189,11 @@ The release script updates all three automatically.
 - Ensure tag format is `v*.*.*` (e.g., `v1.0.0`)
 - Check that tag was pushed: `git push --tags`
 
+### Test build used the wrong branch
+- Test builds should be created from `develop` or a feature branch
+- `main` is reserved for production releases only
+- If you need to test update flows against a lower version, switch to a non-main branch first
+
 ### Build fails
 - Ensure all changes are committed before running release
 - Check .NET SDK version: `dotnet --version`
@@ -179,10 +204,11 @@ The release script updates all three automatically.
 | Task | Command |
 |------|---------|
 | Create feature branch | `git checkout -b feature/name` |
-| Test build | `.\release.ps1` → **press Enter** for version |
+| Test build | `.\release.ps1` on `develop`/feature branch |
 | Release build | `.\release.ps1` → **enter new version** |
 | Check current branch | `git branch` |
 | Switch to main | `git checkout main` |
+| Switch to develop | `git checkout develop` |
 | View last tag | `git describe --tags --abbrev=0` |
 | View all tags | `git tag -l` |
 

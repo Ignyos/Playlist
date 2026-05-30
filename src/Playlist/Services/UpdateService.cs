@@ -1,16 +1,20 @@
 using System;
 using System.Net.Http;
+using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Text.Json.Serialization;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Collections.Generic;
 
 namespace Playlist.Services
 {
     public class UpdateService
     {
         private const string GitHubApiUrl = "https://api.github.com/repos/Ignyos/Playlist/releases/latest";
+        private const string InstallerAssetName = "PlaylistSetup.exe";
         private readonly HttpClient _httpClient;
 
         public UpdateService()
@@ -53,6 +57,18 @@ namespace Playlist.Services
                     };
                 }
 
+                var installerAsset = latestVersion.Assets?
+                    .FirstOrDefault(asset => string.Equals(asset.Name, InstallerAssetName, StringComparison.OrdinalIgnoreCase));
+
+                if (installerAsset == null || string.IsNullOrWhiteSpace(installerAsset.BrowserDownloadUrl))
+                {
+                    return new UpdateCheckResult
+                    {
+                        IsUpdateAvailable = false,
+                        ErrorMessage = "Unable to find the installer for the latest release."
+                    };
+                }
+
                 var isNewer = latestParsed > currentParsed;
 
                 return new UpdateCheckResult
@@ -60,7 +76,7 @@ namespace Playlist.Services
                     IsUpdateAvailable = isNewer,
                     CurrentVersion = FormatVersion(currentParsed),
                     LatestVersion = FormatVersion(latestParsed),
-                    DownloadUrl = latestVersion.HtmlUrl ?? string.Empty,
+                    DownloadUrl = installerAsset.BrowserDownloadUrl,
                     ReleaseNotes = latestVersion.Body ?? string.Empty
                 };
             }
@@ -105,6 +121,47 @@ namespace Playlist.Services
             catch
             {
                 return null;
+            }
+        }
+
+        public async Task<string> DownloadInstallerAsync(string downloadUrl)
+        {
+            if (string.IsNullOrWhiteSpace(downloadUrl))
+            {
+                throw new ArgumentException("A download URL is required.", nameof(downloadUrl));
+            }
+
+            var uri = new Uri(downloadUrl);
+            var fileName = Path.GetFileName(uri.LocalPath);
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                fileName = InstallerAssetName;
+            }
+
+            var downloadDirectory = Path.Combine(Path.GetTempPath(), "PlaylistUpdates");
+            Directory.CreateDirectory(downloadDirectory);
+
+            var downloadPath = Path.Combine(downloadDirectory, fileName);
+
+            try
+            {
+                using var response = await _httpClient.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
+                response.EnsureSuccessStatusCode();
+
+                await using var remoteStream = await response.Content.ReadAsStreamAsync();
+                await using var localStream = File.Create(downloadPath);
+                await remoteStream.CopyToAsync(localStream);
+
+                return downloadPath;
+            }
+            catch
+            {
+                if (File.Exists(downloadPath))
+                {
+                    File.Delete(downloadPath);
+                }
+
+                throw;
             }
         }
 
@@ -164,7 +221,19 @@ namespace Playlist.Services
 
         [JsonPropertyName("html_url")]
         public string? HtmlUrl { get; set; }
+
+        [JsonPropertyName("assets")]
+        public List<GitHubReleaseAsset>? Assets { get; set; }
         
         public string Version => TagName?.TrimStart('v') ?? "0.0.0";
+    }
+
+    public class GitHubReleaseAsset
+    {
+        [JsonPropertyName("name")]
+        public string? Name { get; set; }
+
+        [JsonPropertyName("browser_download_url")]
+        public string? BrowserDownloadUrl { get; set; }
     }
 }
