@@ -1,27 +1,27 @@
-# Release v1.2.7
+# Release v1.2.8
 
 ## Overview
-This release fixes update detection so Check for Updates reports the correct result.
+This release adds a quick way to manually mark playlist items as complete. It makes progress tracking faster when you want to finish or skip an item without playing it to the end.
 
 ## New Features
-- **Version Parsing**: Update checks now handle release tag formats more reliably.
+- **Mark as Completed Action**: Adds a new right-click menu option on playlist items so you can set an item to 100% complete in one step.
 
 ## Improvements
-- **Update Messages**: Parsing failures now show a clear error instead of a false up-to-date message.
-- **Version Display**: Current and latest version values are shown in a consistent format.
+- **Faster Progress Management**: Lets you update completion status directly from the playlist context menu without opening playback controls.
+- **Reliable Completion for All Items**: Handles items with missing duration data so the completed state is still applied consistently.
 
 ## Bug Fixes
-- **Check for Updates**: Fixed an issue where the app could always report "latest version".
+- **Completion State Consistency**: Ensures manually completed items are stored with values that correctly display full progress.
 
 ## Technical Changes
-- Removed obsolete helper and migration scripts.
-- Simplified update-service version comparison logic.
+- Added a new playlist item command handler in the main window for manual completion.
+- Added a dedicated service method to persist completed status using existing progress fields.
 
 ## Breaking Changes (if any)
 - None.
 
 ## Installation
-- Download and run `PlaylistSetup.exe`
+- Download and run PlaylistSetup.exe
 
 ## Requirements
 - Windows 10/11 (64-bit)
