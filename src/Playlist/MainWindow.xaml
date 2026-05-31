@@ -96,6 +96,7 @@
                     <ListBox Name="PlaylistsListBox" Margin="10,0,10,10" Background="White"
                              DisplayMemberPath="DisplayText"
                              AllowDrop="True" 
+                             ContextMenuOpening="PlaylistsListBox_ContextMenuOpening"
                              PreviewMouseLeftButtonDown="Playlist_PreviewMouseLeftButtonDown"
                              MouseMove="Playlist_MouseMove"
                              DragOver="Playlist_DragOver"
@@ -126,9 +127,12 @@
                                     </Setter.Value>
                                 </Setter>
                             </Style>
+                            <ContextMenu x:Key="PlaylistsEmptyContextMenu">
+                                <MenuItem Header="New Playlist" Click="NewPlaylist_Click" />
+                            </ContextMenu>
                         </ListBox.Resources>
                         <ListBox.ContextMenu>
-                            <ContextMenu>
+                            <ContextMenu x:Name="PlaylistsItemContextMenu">
                                 <MenuItem Header="Edit" Click="EditPlaylist_Click" />
                                 <MenuItem Header="Remove" Click="RemovePlaylist_Click" />
                             </ContextMenu>

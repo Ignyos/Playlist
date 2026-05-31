@@ -30,7 +30,7 @@ public partial class NewPlaylistWindow : Window
     public NewPlaylistWindow(int playlistId) : this()
     {
         // Load playlist data using own DbContext
-        var context = _dbContextFactory.CreateDbContext();
+        using var context = _dbContextFactory.CreateDbContext();
         var service = new PlaylistService(context);
         var playlist = service.GetPlaylistById(playlistId);
         

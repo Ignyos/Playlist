@@ -35,7 +35,7 @@ public partial class HistoryWindow : Window
     {
         try
         {
-            var context = _dbContextFactory.CreateDbContext();
+            using var context = _dbContextFactory.CreateDbContext();
             
             var historyEntries = context.History
                 .Include(h => h.Playlist)

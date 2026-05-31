@@ -18,8 +18,6 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
-        base.OnStartup(e);
-
         // Configure and build the dependency injection container
         var services = new ServiceCollection();
         ConfigureServices(services);
@@ -28,18 +26,18 @@ public partial class App : Application
         // Run database migrations with a dedicated DbContext
         try
         {
-            using (var scope = _serviceProvider.CreateScope())
+            var dbFactory = _serviceProvider.GetRequiredService<IDbContextFactory<PlaylistDbContext>>();
+
+            using (var dbContext = dbFactory.CreateDbContext())
             {
-                var dbContext = scope.ServiceProvider.GetRequiredService<PlaylistDbContext>();
                 System.Diagnostics.Debug.WriteLine("Starting database migration...");
                 dbContext.Database.Migrate();
                 System.Diagnostics.Debug.WriteLine("Database migration completed");
             }
             
             // Verify database was created by checking if we can query a table
-            using (var scope = _serviceProvider.CreateScope())
+            using (var dbContext = dbFactory.CreateDbContext())
             {
-                var dbContext = scope.ServiceProvider.GetRequiredService<PlaylistDbContext>();
                 var tableCount = dbContext.Playlists.Count();
                 System.Diagnostics.Debug.WriteLine($"Database verification successful. Playlist count: {tableCount}");
             }
@@ -54,6 +52,9 @@ public partial class App : Application
             );
             Shutdown(1);
         }
+
+        // Let WPF create the startup window only after the database is ready.
+        base.OnStartup(e);
     }
 
     private void ConfigureServices(IServiceCollection services)
@@ -72,8 +73,8 @@ public partial class App : Application
             System.IO.Directory.CreateDirectory(directory);
         }
 
-        // Register DbContext with SQLite
-        services.AddDbContext<PlaylistDbContext>(options =>
+        // Register DbContext factory with SQLite
+        services.AddDbContextFactory<PlaylistDbContext>(options =>
             options.UseSqlite($"Data Source={dbPath}")
                 .LogTo(message => System.Diagnostics.Debug.WriteLine(message), 
                     Microsoft.Extensions.Logging.LogLevel.Information)

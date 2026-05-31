@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Playlist.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Playlist.Services;
 
@@ -19,15 +20,16 @@ public interface IPlaylistDbContextFactory
 /// </summary>
 public class PlaylistDbContextFactory : IPlaylistDbContextFactory
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IDbContextFactory<PlaylistDbContext> _dbContextFactory;
 
     public PlaylistDbContextFactory(IServiceProvider serviceProvider)
     {
-        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        if (serviceProvider == null) throw new ArgumentNullException(nameof(serviceProvider));
+        _dbContextFactory = serviceProvider.GetRequiredService<IDbContextFactory<PlaylistDbContext>>();
     }
 
     public PlaylistDbContext CreateDbContext()
     {
-        return _serviceProvider.GetRequiredService<PlaylistDbContext>();
+        return _dbContextFactory.CreateDbContext();
     }
 }

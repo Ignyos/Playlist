@@ -4,6 +4,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using Playlist.Models;
 using Playlist.Services;
 
@@ -12,6 +13,7 @@ namespace Playlist.Views
     public partial class MediaPlayerWindow : Window
     {
         private readonly MediaPlayerService _mediaPlayerService;
+        private readonly ISettingService _settingService;
         private readonly DispatcherTimer _updateTimer;
         private readonly DispatcherTimer _hideControlsTimer;
         private bool _isDraggingProgress;
@@ -20,6 +22,7 @@ namespace Playlist.Views
         private WindowStyle _previousWindowStyle;
         private ResizeMode _previousResizeMode;
         private bool _controlsVisible = true;
+        private bool _isInitializingVolume = true;
         private List<PlaylistItem> _playlistItems;
         private int _currentIndex;
 
@@ -30,6 +33,8 @@ namespace Playlist.Views
             InitializeComponent();
 
             _mediaPlayerService = mediaPlayerService;
+            var app = (App)Application.Current;
+            _settingService = app.ServiceProvider.GetRequiredService<ISettingService>();
             _playlistItems = playlistItems;
             _currentIndex = currentIndex;
 
@@ -58,8 +63,12 @@ namespace Playlist.Views
             };
             _hideControlsTimer.Tick += HideControlsTimer_Tick;
 
-            // Set initial volume
-            _mediaPlayerService.SetVolume((int)VolumeSlider.Value);
+            // Load and apply persisted volume.
+            _isInitializingVolume = true;
+            var persistedVolume = _settingService.GetPlaybackVolume();
+            VolumeSlider.Value = persistedVolume;
+            _mediaPlayerService.SetVolume(persistedVolume);
+            _isInitializingVolume = false;
             
             // Update button states
             UpdateNavigationButtons();
@@ -167,7 +176,15 @@ namespace Playlist.Views
 
         private void VolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            _mediaPlayerService?.SetVolume((int)e.NewValue);
+            var volume = (int)e.NewValue;
+            _mediaPlayerService?.SetVolume(volume);
+
+            if (_isInitializingVolume)
+            {
+                return;
+            }
+
+            _settingService.SetPlaybackVolume(volume);
         }
 
         private void FullScreen_Click(object sender, RoutedEventArgs e)

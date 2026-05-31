@@ -19,6 +19,10 @@ public interface ISettingService
 
     void SetRunOnStartup(bool enabled);
 
+    int GetPlaybackVolume();
+
+    void SetPlaybackVolume(int volume);
+
     DateTime? GetLastUpdateCheckAttemptUtc();
 
     void SetLastUpdateCheckAttemptUtc(DateTime utcTimestamp);
@@ -39,6 +43,7 @@ public class SettingService : ISettingService
     private const string SelectedPlaylistIdKey = "SelectedPlaylistId";
     private const string FullscreenBehaviorKey = "FullscreenBehavior";
     private const string RunOnStartupKey = "RunOnStartup";
+    private const string PlaybackVolumeKey = "PlaybackVolume";
     private const string LastUpdateCheckAttemptUtcKey = "LastUpdateCheckAttemptUtc";
     private const string LastKnownUpdateAvailableKey = "LastKnownUpdateAvailable";
     private const string LastKnownUpdateVersionKey = "LastKnownUpdateVersion";
@@ -82,6 +87,22 @@ public class SettingService : ISettingService
         SetSettingValue(RunOnStartupKey, enabled.ToString());
     }
 
+    public int GetPlaybackVolume()
+    {
+        var rawValue = GetSettingValue(PlaybackVolumeKey, "80");
+        if (!int.TryParse(rawValue, out var volume))
+        {
+            return 80;
+        }
+
+        return Math.Clamp(volume, 0, 100);
+    }
+
+    public void SetPlaybackVolume(int volume)
+    {
+        SetSettingValue(PlaybackVolumeKey, Math.Clamp(volume, 0, 100).ToString());
+    }
+
     public DateTime? GetLastUpdateCheckAttemptUtc()
     {
         var rawValue = GetSettingValue(LastUpdateCheckAttemptUtcKey, string.Empty);
@@ -123,14 +144,14 @@ public class SettingService : ISettingService
 
     private string GetSettingValue(string key, string defaultValue)
     {
-        var context = _dbContextFactory.CreateDbContext();
+        using var context = _dbContextFactory.CreateDbContext();
         var setting = context.Settings.Find(key);
         return setting?.Value ?? defaultValue;
     }
 
     private void SetSettingValue(string key, string value)
     {
-        var context = _dbContextFactory.CreateDbContext();
+        using var context = _dbContextFactory.CreateDbContext();
         var setting = context.Settings.Find(key);
         if (setting == null)
         {

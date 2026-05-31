@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using LibVLCSharp.Shared;
 using Playlist.Data;
@@ -13,9 +14,12 @@ namespace Playlist.Services
     {
         private readonly LibVLC _libVLC;
         private readonly MediaPlayer _mediaPlayer;
-        private readonly PlaylistDbContext _dbContext;
+        private readonly IPlaylistDbContextFactory _dbContextFactory;
+        private readonly SemaphoreSlim _dbLock = new SemaphoreSlim(1, 1);
         private PlaylistItem? _currentItem;
         private DateTime? _playbackStartTime;
+        private DateTime _lastTimestampSave = DateTime.MinValue;
+        private static readonly TimeSpan TimestampSaveInterval = TimeSpan.FromMilliseconds(250);
         private bool _disposed;
 
         public event EventHandler<PlaylistItem>? MediaStarted;
@@ -26,9 +30,9 @@ namespace Playlist.Services
         public PlaylistItem? CurrentItem => _currentItem;
         public bool IsPlaying => !_disposed && _mediaPlayer.IsPlaying;
 
-        public MediaPlayerService(PlaylistDbContext dbContext)
+        public MediaPlayerService(IPlaylistDbContextFactory dbContextFactory)
         {
-            _dbContext = dbContext;
+            _dbContextFactory = dbContextFactory;
             
             // Initialize LibVLC
             Core.Initialize();
@@ -81,13 +85,22 @@ namespace Playlist.Services
                 // Capture duration if not already stored
                 if ((!item.Duration.HasValue || item.Duration.Value == 0) && duration > 0)
                 {
-                    var dbItem = await _dbContext.PlaylistItems
-                        .FirstOrDefaultAsync(i => i.Id == item.Id);
-                    if (dbItem != null)
+                    await _dbLock.WaitAsync();
+                    try
                     {
-                        dbItem.Duration = duration;
-                        await _dbContext.SaveChangesAsync();
-                        item.Duration = duration; // Update the in-memory object too
+                        using var context = _dbContextFactory.CreateDbContext();
+                        var dbItem = await context.PlaylistItems
+                            .FirstOrDefaultAsync(i => i.Id == item.Id);
+                        if (dbItem != null)
+                        {
+                            dbItem.Duration = duration;
+                            await context.SaveChangesAsync();
+                            item.Duration = duration; // Update the in-memory object too
+                        }
+                    }
+                    finally
+                    {
+                        _dbLock.Release();
                     }
                 }
 
@@ -97,25 +110,35 @@ namespace Playlist.Services
                     _mediaPlayer.Time = item.TimeStamp.Value * 1000; // Convert seconds to milliseconds
                 }
 
-                // Update LastPlayed
-                item.LastPlayed = DateTime.Now;
-                var playlist = await _dbContext.Playlists
-                    .FirstOrDefaultAsync(p => p.Id == item.PlaylistId);
-                if (playlist != null)
+                await _dbLock.WaitAsync();
+                try
                 {
-                    playlist.LastPlayed = DateTime.Now;
+                    using var context = _dbContextFactory.CreateDbContext();
+
+                    // Update LastPlayed
+                    item.LastPlayed = DateTime.Now;
+                    var playlist = await context.Playlists
+                        .FirstOrDefaultAsync(p => p.Id == item.PlaylistId);
+                    if (playlist != null)
+                    {
+                        playlist.LastPlayed = DateTime.Now;
+                    }
+
+                    // Add history record
+                    var history = new History
+                    {
+                        PlaylistId = item.PlaylistId,
+                        PlaylistItemId = item.Id,
+                        TimeStamp = DateTime.Now
+                    };
+                    context.History.Add(history);
+
+                    await context.SaveChangesAsync();
                 }
-                
-                // Add history record
-                var history = new History
+                finally
                 {
-                    PlaylistId = item.PlaylistId,
-                    PlaylistItemId = item.Id,
-                    TimeStamp = DateTime.Now
-                };
-                _dbContext.History.Add(history);
-                
-                await _dbContext.SaveChangesAsync();
+                    _dbLock.Release();
+                }
 
                 MediaStarted?.Invoke(this, item);
             }
@@ -138,12 +161,21 @@ namespace Playlist.Services
                 _mediaPlayer.Stop();
 
                 // Update timestamp in database
-                var item = await _dbContext.PlaylistItems
-                    .FirstOrDefaultAsync(i => i.Id == _currentItem.Id);
-                if (item != null)
+                await _dbLock.WaitAsync();
+                try
                 {
-                    item.TimeStamp = currentTimeSeconds;
-                    await _dbContext.SaveChangesAsync();
+                    using var context = _dbContextFactory.CreateDbContext();
+                    var item = await context.PlaylistItems
+                        .FirstOrDefaultAsync(i => i.Id == _currentItem.Id);
+                    if (item != null)
+                    {
+                        item.TimeStamp = currentTimeSeconds;
+                        await context.SaveChangesAsync();
+                    }
+                }
+                finally
+                {
+                    _dbLock.Release();
                 }
 
                 _currentItem = null;
@@ -187,30 +219,39 @@ namespace Playlist.Services
                 await LogHistoryAsync(_currentItem);
 
                 // Keep timestamp at duration (100%) since playback completed
-                var item = await _dbContext.PlaylistItems
-                    .FirstOrDefaultAsync(i => i.Id == _currentItem.Id);
-                if (item != null)
+                await _dbLock.WaitAsync();
+                try
                 {
-                    var durationMs = item.Duration.HasValue && item.Duration.Value > 0
-                        ? item.Duration.Value
-                        : _mediaPlayer.Length;
-
-                    if (durationMs > 0)
+                    using var context = _dbContextFactory.CreateDbContext();
+                    var item = await context.PlaylistItems
+                        .FirstOrDefaultAsync(i => i.Id == _currentItem.Id);
+                    if (item != null)
                     {
-                        // Ensure duration is saved if it was missing
-                        if (!item.Duration.HasValue || item.Duration.Value == 0)
-                        {
-                            item.Duration = durationMs;
-                            _currentItem.Duration = durationMs;
-                        }
+                        var durationMs = item.Duration.HasValue && item.Duration.Value > 0
+                            ? item.Duration.Value
+                            : _mediaPlayer.Length;
 
-                        // Set timestamp to duration (in seconds) to represent 100% progress
-                        // Use ceiling to avoid 99% due to truncation
-                        var endSeconds = (int)Math.Ceiling(durationMs / 1000.0);
-                        item.TimeStamp = endSeconds;
-                        _currentItem.TimeStamp = endSeconds;
-                        await _dbContext.SaveChangesAsync();
+                        if (durationMs > 0)
+                        {
+                            // Ensure duration is saved if it was missing
+                            if (!item.Duration.HasValue || item.Duration.Value == 0)
+                            {
+                                item.Duration = durationMs;
+                                _currentItem.Duration = durationMs;
+                            }
+
+                            // Set timestamp to duration (in seconds) to represent 100% progress
+                            // Use ceiling to avoid 99% due to truncation
+                            var endSeconds = (int)Math.Ceiling(durationMs / 1000.0);
+                            item.TimeStamp = endSeconds;
+                            _currentItem.TimeStamp = endSeconds;
+                            await context.SaveChangesAsync();
+                        }
                     }
+                }
+                finally
+                {
+                    _dbLock.Release();
                 }
 
                 var endedItem = _currentItem;
@@ -237,16 +278,27 @@ namespace Playlist.Services
 
         private async void OnTimeChanged(object? sender, MediaPlayerTimeChangedEventArgs e)
         {
-            // Periodically save timestamp (every 1 second)
-            if (_currentItem != null && e.Time % 1000 < 500)
+            // Periodically save timestamp (every 250ms)
+            // Use non-blocking tryacquire: if a save is already in progress, skip this tick
+            if (_currentItem != null && (DateTime.Now - _lastTimestampSave) >= TimestampSaveInterval)
             {
-                var currentTimeSeconds = (int)(e.Time / 1000);
-                var item = await _dbContext.PlaylistItems
-                    .FirstOrDefaultAsync(i => i.Id == _currentItem.Id);
-                if (item != null)
+                if (!_dbLock.Wait(0)) return;
+                try
                 {
-                    item.TimeStamp = currentTimeSeconds;
-                    await _dbContext.SaveChangesAsync();
+                    _lastTimestampSave = DateTime.Now;
+                    using var context = _dbContextFactory.CreateDbContext();
+                    var currentTimeSeconds = (int)(e.Time / 1000);
+                    var item = await context.PlaylistItems
+                        .FirstOrDefaultAsync(i => i.Id == _currentItem.Id);
+                    if (item != null)
+                    {
+                        item.TimeStamp = currentTimeSeconds;
+                        await context.SaveChangesAsync();
+                    }
+                }
+                finally
+                {
+                    _dbLock.Release();
                 }
             }
         }
@@ -255,15 +307,24 @@ namespace Playlist.Services
         {
             try
             {
-                var history = new History
+                await _dbLock.WaitAsync();
+                try
                 {
-                    PlaylistId = item.PlaylistId,
-                    PlaylistItemId = item.Id,
-                    TimeStamp = _playbackStartTime ?? DateTime.Now
-                };
+                    using var context = _dbContextFactory.CreateDbContext();
+                    var history = new History
+                    {
+                        PlaylistId = item.PlaylistId,
+                        PlaylistItemId = item.Id,
+                        TimeStamp = _playbackStartTime ?? DateTime.Now
+                    };
 
-                _dbContext.History.Add(history);
-                await _dbContext.SaveChangesAsync();
+                    context.History.Add(history);
+                    await context.SaveChangesAsync();
+                }
+                finally
+                {
+                    _dbLock.Release();
+                }
             }
             catch (Exception ex)
             {
@@ -276,17 +337,26 @@ namespace Playlist.Services
         {
             try
             {
-                var errorLog = new ErrorLog
+                await _dbLock.WaitAsync();
+                try
                 {
-                    PlaylistId = item?.PlaylistId,
-                    PlaylistItemId = item?.Id,
-                    TimeStamp = DateTime.Now,
-                    ErrorMessage = errorMessage,
-                    StackTrace = stackTrace ?? string.Empty
-                };
+                    using var context = _dbContextFactory.CreateDbContext();
+                    var errorLog = new ErrorLog
+                    {
+                        PlaylistId = item?.PlaylistId,
+                        PlaylistItemId = item?.Id,
+                        TimeStamp = DateTime.Now,
+                        ErrorMessage = errorMessage,
+                        StackTrace = stackTrace ?? string.Empty
+                    };
 
-                _dbContext.ErrorLogs.Add(errorLog);
-                await _dbContext.SaveChangesAsync();
+                    context.ErrorLogs.Add(errorLog);
+                    await context.SaveChangesAsync();
+                }
+                finally
+                {
+                    _dbLock.Release();
+                }
             }
             catch
             {
@@ -299,6 +369,7 @@ namespace Playlist.Services
             if (_disposed) return;
 
             _disposed = true; // Set this first to prevent any further access
+            _dbLock.Dispose();
 
             _mediaPlayer.Playing -= OnMediaPlaying;
             _mediaPlayer.EndReached -= OnMediaEnded;
