@@ -19,24 +19,30 @@ Status labels:
 - Blocked
 - Done
 
+Item detail docs:
+- Detailed documentation for roadmap items lives in `roadmap/items/`.
+
 ## Now
-- [ ] P0 Playback stability hardening
+- [ ] P1 Per-playlist playback behavior modes
   - Status: Planned
-  - Target: v1.2.11
-  - Why it matters: Reduces crash risk during playback and high-frequency UI interactions.
-  - Notes: Continue validating timestamp persistence and concurrent playback actions.
+  - Target: v1.3.0
+  - Why it matters: Gives users control over how playback continues after each video and supports common queue behavior expectations.
+  - Notes: Add per-playlist modes for auto-next, loop, and shuffle variants.
+  - Details: roadmap/items/p1-per-playlist-playback-behavior-modes.md
 
 - [ ] P1 Media player usability polish
   - Status: Planned
   - Target: v1.2.11
   - Why it matters: Makes common playback actions faster and clearer for daily use.
   - Notes: Improve control feedback and edge-case behavior around pause/seek/stop.
+  - Details: roadmap/items/p1-media-player-usability-polish.md
 
 - [ ] P1 Update experience refinement
   - Status: Planned
   - Target: v1.2.11
   - Why it matters: Helps users discover and apply updates with less friction.
   - Notes: Review inline notice states and install flow messaging.
+  - Details: roadmap/items/p1-update-experience-refinement.md
 
 ## Next
 - [ ] P1 Playlist management enhancements
@@ -85,6 +91,7 @@ Status labels:
   - Why it matters: Could enable community-driven enhancements.
 
 ## Recently Completed
+- [x] P0 Playback stability hardening (v1.2.11) - roadmap/items/p0-playback-stability-hardening.md
 - [x] Context-aware playlist right-click menu (item actions vs empty-space new playlist)
 - [x] Playback and settings DbContext concurrency reliability improvements
 - [x] Better playback error logging for troubleshooting

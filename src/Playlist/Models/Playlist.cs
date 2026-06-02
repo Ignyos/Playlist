@@ -12,6 +12,8 @@ public class Playlist
     public DateTime Created { get; set; }
     
     public DateTime LastPlayed { get; set; }
+
+    public PlaylistPlaybackMode PlaybackMode { get; set; } = PlaylistPlaybackMode.StopAfterCurrent;
     
     public int? SelectedItemId { get; set; }
     

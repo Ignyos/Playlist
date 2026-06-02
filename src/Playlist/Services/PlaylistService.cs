@@ -42,7 +42,8 @@ public class PlaylistService
         {
             Name = name,
             Created = DateTime.Now,
-            LastPlayed = DateTime.MinValue
+            LastPlayed = DateTime.MinValue,
+            PlaybackMode = PlaylistPlaybackMode.StopAfterCurrent
         };
 
         var ordinal = 0;
@@ -229,5 +230,24 @@ public class PlaylistService
             playlist.SelectedItemId = selectedItemId;
             _context.SaveChanges();
         }
+    }
+
+    public PlaylistPlaybackMode GetPlaylistPlaybackMode(int playlistId)
+    {
+        var playlist = _context.Playlists.Find(playlistId);
+        return playlist?.PlaybackMode ?? PlaylistPlaybackMode.StopAfterCurrent;
+    }
+
+    public bool UpdatePlaylistPlaybackMode(int playlistId, PlaylistPlaybackMode mode)
+    {
+        var playlist = _context.Playlists.Find(playlistId);
+        if (playlist == null || playlist.DeleteDate != null)
+        {
+            return false;
+        }
+
+        playlist.PlaybackMode = mode;
+        _context.SaveChanges();
+        return true;
     }
 }

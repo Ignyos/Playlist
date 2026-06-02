@@ -88,6 +88,9 @@ namespace Playlist.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("PlaybackMode")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int?>("SelectedItemId")
                         .HasColumnType("INTEGER");
 

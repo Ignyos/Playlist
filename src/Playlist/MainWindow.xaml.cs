@@ -67,6 +67,9 @@ public partial class MainWindow : Window
     private string _inlineUpdateDownloadUrl = string.Empty;
     private static readonly TimeSpan UpdateCheckInterval = TimeSpan.FromHours(24);
     private static readonly TimeSpan UpdateCheckPollInterval = TimeSpan.FromMinutes(5);
+    private readonly Random _random = new();
+    private readonly HashSet<int> _shufflePlayOncePlayedItemIds = [];
+    private int? _shufflePlayOncePlaylistId;
 
     public MainWindow()
     {
@@ -279,7 +282,8 @@ public partial class MainWindow : Window
                 Id = playlist.Id,
                 Name = playlist.Name,
                 Created = playlist.Created,
-                LastPlayed = playlist.LastPlayed
+                LastPlayed = playlist.LastPlayed,
+                PlaybackMode = playlist.PlaybackMode
             });
         }
     }
@@ -754,6 +758,36 @@ public partial class MainWindow : Window
         }
     }
 
+    private void PlaylistDetails_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedPlaylist == null)
+        {
+            MessageBox.Show("Please select a playlist first.", "No Selection", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        try
+        {
+            var detailsWindow = new PlaylistDetailsWindow(_selectedPlaylist.Id)
+            {
+                Owner = this
+            };
+
+            detailsWindow.ShowDialog();
+            LoadPlaylists(SearchTextBox.Text);
+
+            var refreshed = _playlists.FirstOrDefault(p => p.Id == _selectedPlaylist.Id);
+            if (refreshed != null)
+            {
+                PlaylistsListBox.SelectedItem = refreshed;
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error opening playlist details: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     private void RemovePlaylist_Click(object sender, RoutedEventArgs e)
     {
         if (_selectedPlaylist == null)
@@ -918,6 +952,9 @@ public partial class MainWindow : Window
             using var playlistContext = _dbContextFactory.CreateDbContext();
             var playlistItem = playlistContext.PlaylistItems.FirstOrDefault(i => i.Id == item.Id);
             if (playlistItem == null) return;
+
+            // Explicit playback actions restart the shuffle play-once session for this playlist.
+            ResetShufflePlayOnceSession(item.PlaylistId);
 
             // Get all playlist items in order for navigation
             var allPlaylistItems = playlistContext.PlaylistItems
@@ -1167,16 +1204,137 @@ public partial class MainWindow : Window
         return null;
     }
 
-    private void OnMediaEnded(object? sender, Models.PlaylistItem e)
+    private async void OnMediaEnded(object? sender, Models.PlaylistItem e)
     {
         // Media playback completed, refresh the playlist to show updated progress
         Dispatcher.Invoke(() =>
         {
-            if (_selectedPlaylist != null)
+            if (_selectedPlaylist != null && _selectedPlaylist.Id == e.PlaylistId)
             {
                 LoadPlaylistItems(_selectedPlaylist.Id);
             }
         });
+
+        await ContinuePlaybackAfterCompletionAsync(e);
+    }
+
+    private async Task ContinuePlaybackAfterCompletionAsync(Models.PlaylistItem endedItem)
+    {
+        if (_mediaPlayerService == null || _mediaPlayerWindow == null || !_mediaPlayerWindow.IsVisible)
+        {
+            return;
+        }
+
+        Models.PlaylistItem? nextItem;
+        int nextIndex;
+
+        using (var context = _dbContextFactory.CreateDbContext())
+        {
+            var service = new PlaylistService(context);
+            var playlist = service.GetPlaylistById(endedItem.PlaylistId);
+            if (playlist == null)
+            {
+                return;
+            }
+
+            var orderedItems = playlist.Items
+                .Where(i => i.DeleteDate == null)
+                .OrderBy(i => i.Ordinal)
+                .ToList();
+
+            if (orderedItems.Count == 0)
+            {
+                return;
+            }
+
+            var currentIndex = orderedItems.FindIndex(i => i.Id == endedItem.Id);
+            if (currentIndex < 0)
+            {
+                return;
+            }
+
+            nextItem = SelectNextItemForMode(playlist.PlaybackMode, orderedItems, currentIndex, endedItem.Id);
+            if (nextItem == null)
+            {
+                return;
+            }
+
+            nextIndex = orderedItems.FindIndex(i => i.Id == nextItem.Id);
+            service.UpdatePlaylistSelectedItem(endedItem.PlaylistId, nextItem.Id);
+        }
+
+        if (_selectedPlaylist != null && _selectedPlaylist.Id == endedItem.PlaylistId)
+        {
+            var nextVmItem = _playlistItems.FirstOrDefault(vm => vm.Id == nextItem.Id);
+            if (nextVmItem != null)
+            {
+                PlaylistItemsListBox.SelectedItem = nextVmItem;
+                PlaylistItemsListBox.ScrollIntoView(nextVmItem);
+            }
+        }
+
+        _mediaPlayerWindow.UpdateCurrentIndex(nextIndex);
+        await _mediaPlayerService.PlayAsync(nextItem, continueFromTimestamp: false);
+    }
+
+    private Models.PlaylistItem? SelectNextItemForMode(
+        Models.PlaylistPlaybackMode mode,
+        List<Models.PlaylistItem> orderedItems,
+        int currentIndex,
+        int endedItemId)
+    {
+        return mode switch
+        {
+            Models.PlaylistPlaybackMode.StopAfterCurrent => null,
+            Models.PlaylistPlaybackMode.SequentialAutoNext =>
+                currentIndex + 1 < orderedItems.Count ? orderedItems[currentIndex + 1] : null,
+            Models.PlaylistPlaybackMode.SequentialAutoNextLoop =>
+                orderedItems[(currentIndex + 1) % orderedItems.Count],
+            Models.PlaylistPlaybackMode.ShuffleContinuous =>
+                orderedItems[_random.Next(orderedItems.Count)],
+            Models.PlaylistPlaybackMode.ShufflePlayOnce => SelectShufflePlayOnceNext(orderedItems, endedItemId),
+            _ => null
+        };
+    }
+
+    private Models.PlaylistItem? SelectShufflePlayOnceNext(List<Models.PlaylistItem> orderedItems, int endedItemId)
+    {
+        if (orderedItems.Count == 0)
+        {
+            return null;
+        }
+
+        var playlistId = orderedItems[0].PlaylistId;
+        EnsureShufflePlayOnceSession(playlistId);
+        _shufflePlayOncePlayedItemIds.Add(endedItemId);
+
+        var remaining = orderedItems
+            .Where(i => !_shufflePlayOncePlayedItemIds.Contains(i.Id))
+            .ToList();
+
+        if (remaining.Count == 0)
+        {
+            return null;
+        }
+
+        return remaining[_random.Next(remaining.Count)];
+    }
+
+    private void ResetShufflePlayOnceSession(int playlistId)
+    {
+        _shufflePlayOncePlaylistId = playlistId;
+        _shufflePlayOncePlayedItemIds.Clear();
+    }
+
+    private void EnsureShufflePlayOnceSession(int playlistId)
+    {
+        if (_shufflePlayOncePlaylistId == playlistId)
+        {
+            return;
+        }
+
+        _shufflePlayOncePlaylistId = playlistId;
+        _shufflePlayOncePlayedItemIds.Clear();
     }
 
     private void MediaPlayerWindow_Closed(object? sender, EventArgs e)
