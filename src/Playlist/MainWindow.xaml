@@ -134,7 +134,7 @@
                         <ListBox.ContextMenu>
                             <ContextMenu x:Name="PlaylistsItemContextMenu">
                                 <MenuItem Header="Edit" Click="EditPlaylist_Click" />
-                                <MenuItem Header="Playlist Details" Click="PlaylistDetails_Click" />
+                                <MenuItem Header="Playback Mode" Click="PlaylistDetails_Click" />
                                 <MenuItem Header="Remove" Click="RemovePlaylist_Click" />
                             </ContextMenu>
                         </ListBox.ContextMenu>

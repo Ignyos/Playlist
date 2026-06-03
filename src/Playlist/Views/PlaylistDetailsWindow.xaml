@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Playlist Details" Height="320" Width="520" MinHeight="280" MinWidth="460"
+        Title="Playback Mode" Height="320" Width="520" MinHeight="280" MinWidth="460"
         Icon="/Assets/icon.ico"
         WindowStartupLocation="CenterOwner">
     <Grid Margin="12">
@@ -22,7 +22,7 @@
                    Margin="0,0,0,12" />
 
         <StackPanel Grid.Row="1" Margin="0,0,0,10">
-            <TextBlock Text="Playback behavior"
+            <TextBlock Text="Select Mode"
                        FontWeight="SemiBold"
                        Margin="0,0,0,6" />
             <ComboBox Name="PlaybackModeComboBox"

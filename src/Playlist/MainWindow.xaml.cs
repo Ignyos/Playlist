@@ -766,9 +766,11 @@ public partial class MainWindow : Window
             return;
         }
 
+        var selectedPlaylistId = _selectedPlaylist.Id;
+
         try
         {
-            var detailsWindow = new PlaylistDetailsWindow(_selectedPlaylist.Id)
+            var detailsWindow = new PlaylistDetailsWindow(selectedPlaylistId)
             {
                 Owner = this
             };
@@ -776,7 +778,7 @@ public partial class MainWindow : Window
             detailsWindow.ShowDialog();
             LoadPlaylists(SearchTextBox.Text);
 
-            var refreshed = _playlists.FirstOrDefault(p => p.Id == _selectedPlaylist.Id);
+            var refreshed = _playlists.FirstOrDefault(p => p.Id == selectedPlaylistId);
             if (refreshed != null)
             {
                 PlaylistsListBox.SelectedItem = refreshed;
