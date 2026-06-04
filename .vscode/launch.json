@@ -2,10 +2,32 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Run Playlist (Clean & Build)",
+            "name": "Run Playlist (Normal Dev)",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "clean-build",
+            "program": "${workspaceFolder}/src/Playlist/bin/Debug/net9.0-windows/Playlist.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/Playlist",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        {
+            "name": "Run Playlist (Scenario: Clean/New DB)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "scenario-clean-db-and-build",
+            "program": "${workspaceFolder}/src/Playlist/bin/Debug/net9.0-windows/Playlist.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/Playlist",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        {
+            "name": "Run Playlist (Scenario: Existing DB/Upgrade)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "scenario-upgrade-db-and-build",
             "program": "${workspaceFolder}/src/Playlist/bin/Debug/net9.0-windows/Playlist.dll",
             "args": [],
             "cwd": "${workspaceFolder}/src/Playlist",

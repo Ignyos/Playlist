@@ -1208,21 +1208,36 @@ public partial class MainWindow : Window
 
     private async void OnMediaEnded(object? sender, Models.PlaylistItem e)
     {
-        // Media playback completed, refresh the playlist to show updated progress
-        Dispatcher.Invoke(() =>
+        try
         {
-            if (_selectedPlaylist != null && _selectedPlaylist.Id == e.PlaylistId)
+            // Media playback completed, refresh the playlist to show updated progress
+            await Dispatcher.InvokeAsync(() =>
             {
-                LoadPlaylistItems(_selectedPlaylist.Id);
-            }
-        });
+                if (_selectedPlaylist != null && _selectedPlaylist.Id == e.PlaylistId)
+                {
+                    LoadPlaylistItems(_selectedPlaylist.Id);
+                }
+            });
 
-        await ContinuePlaybackAfterCompletionAsync(e);
+            await ContinuePlaybackAfterCompletionAsync(e);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"OnMediaEnded continuation failed: {ex}");
+        }
     }
 
     private async Task ContinuePlaybackAfterCompletionAsync(Models.PlaylistItem endedItem)
     {
-        if (_mediaPlayerService == null || _mediaPlayerWindow == null || !_mediaPlayerWindow.IsVisible)
+        if (_mediaPlayerService == null)
+        {
+            return;
+        }
+
+        var canContinue = await Dispatcher.InvokeAsync(() =>
+            _mediaPlayerWindow != null && _mediaPlayerWindow.IsVisible);
+
+        if (!canContinue)
         {
             return;
         }
@@ -1265,17 +1280,21 @@ public partial class MainWindow : Window
             service.UpdatePlaylistSelectedItem(endedItem.PlaylistId, nextItem.Id);
         }
 
-        if (_selectedPlaylist != null && _selectedPlaylist.Id == endedItem.PlaylistId)
+        await Dispatcher.InvokeAsync(() =>
         {
-            var nextVmItem = _playlistItems.FirstOrDefault(vm => vm.Id == nextItem.Id);
-            if (nextVmItem != null)
+            if (_selectedPlaylist != null && _selectedPlaylist.Id == endedItem.PlaylistId)
             {
-                PlaylistItemsListBox.SelectedItem = nextVmItem;
-                PlaylistItemsListBox.ScrollIntoView(nextVmItem);
+                var nextVmItem = _playlistItems.FirstOrDefault(vm => vm.Id == nextItem.Id);
+                if (nextVmItem != null)
+                {
+                    PlaylistItemsListBox.SelectedItem = nextVmItem;
+                    PlaylistItemsListBox.ScrollIntoView(nextVmItem);
+                }
             }
-        }
 
-        _mediaPlayerWindow.UpdateCurrentIndex(nextIndex);
+            _mediaPlayerWindow?.UpdateCurrentIndex(nextIndex);
+        });
+
         await _mediaPlayerService.PlayAsync(nextItem, continueFromTimestamp: false);
     }
 

@@ -2,6 +2,34 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "backup-local-db",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-Command",
+                "$dbDir = Join-Path $env:LOCALAPPDATA 'Playlist'; $dbPath = Join-Path $dbDir 'playlist.db'; $backupDir = Join-Path $dbDir 'backups'; New-Item -ItemType Directory -Path $backupDir -Force | Out-Null; if (Test-Path $dbPath) { $ts = Get-Date -Format 'yyyyMMdd-HHmmss'; $target = Join-Path $backupDir ('playlist-' + $ts + '.db'); Copy-Item $dbPath $target -Force; Write-Host ('Backed up DB to ' + $target); } else { Write-Host 'No local DB found to back up.'; }"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "remove-local-db",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-Command",
+                "$dbPath = Join-Path (Join-Path $env:LOCALAPPDATA 'Playlist') 'playlist.db'; if (Test-Path $dbPath) { Remove-Item $dbPath -Force; Write-Host ('Removed local DB at ' + $dbPath); } else { Write-Host 'No local DB found to remove.'; }"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "clean-build",
             "type": "shell",
             "command": "powershell",
@@ -15,6 +43,25 @@
                 "panel": "shared"
             },
             "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "scenario-clean-db-and-build",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "backup-local-db",
+                "remove-local-db",
+                "clean-build"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "scenario-upgrade-db-and-build",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "backup-local-db",
+                "clean-build"
+            ],
+            "problemMatcher": []
         },
         {
             "label": "run-release",
