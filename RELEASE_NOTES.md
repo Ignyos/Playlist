@@ -1,28 +1,27 @@
-# Release v1.3.0
+# Release v1.3.1
 
 ## Overview
-This release introduces per-playlist playback modes so you can control what happens when a video ends. It adds flexible queue behavior for sequential playback, looping, and shuffle workflows, while keeping setup simple through a dedicated Playback Mode screen.
+This release focuses on stability and recovery for playback mode workflows and startup database initialization. It also improves local development testing setup with scenario-based launch profiles in VS Code.
 
 ## New Features
-- **Per-Playlist Playback Modes**: Adds playlist-level controls for stop after current item, auto-play next, auto-play next with loop, shuffle continuous, and shuffle play-once.
-- **Playback Mode Window**: Adds a dedicated window to configure mode behavior for each playlist.
-- **Context Menu Entry**: Adds a direct **Playback Mode** action in the playlist context menu for faster access.
-- **Shuffle Play-Once Workflow**: Adds random no-repeat playback that stops after all items have been played once.
+- **Database Self-Repair on Startup**: Adds in-place schema repair that can create missing core tables, columns, and indexes when a local database is incomplete.
+- **VS Code Scenario Launch Profiles**: Adds one-click launch profiles for normal run, clean/new database testing, and existing database upgrade testing.
 
 ## Improvements
-- **Immediate Mode Application**: Applies mode changes immediately so the next transition follows the newly selected behavior.
-- **Auto-Save Experience**: Saves playback mode changes automatically from the Playback Mode window.
-- **Playback Navigation Continuity**: Keeps selected item state synchronized as auto-next and shuffle transitions occur.
-- **Planning Documentation Structure**: Organizes roadmap planning into roadmap/roadmap.md with detailed per-item docs in roadmap/items/.
+- **Safer Database Recovery**: Improves startup behavior to repair missing schema elements in place instead of deleting the whole database by default.
+- **Developer Testing Workflow**: Adds reusable backup/remove database tasks and scenario orchestration tasks to speed regression testing.
+- **Testing Documentation**: Adds a dedicated development testing checklist with scenario guidance and verification points.
 
 ## Bug Fixes
-- **Playback Mode Dialog Reselection Error**: Fixes a null-reference path when reloading playlists after closing the Playback Mode dialog.
+- **Playback Mode Threading Crash**: Fixes cross-thread UI access in playback continuation flow when using modes other than Stop after current item.
+- **Media Ended Continuation Safety**: Wraps async media-ended continuation with exception safety to prevent process-terminating unhandled exceptions.
+- **Startup Initialization Failures**: Fixes startup failures caused by missing Playlists and related schema objects in partially initialized local databases.
 
 ## Technical Changes
-- Added a new playlist playback mode model and persistence path in playlist services and view models.
-- Added database schema support for persisted playlist playback mode values.
-- Added completion-flow logic for sequential, loop, shuffle continuous, and shuffle play-once transitions.
-- Added shuffle play-once session tracking and reset behavior for explicit playback restarts.
+- Added dispatcher marshaling for UI-touching operations in playback auto-advance flow.
+- Added guarded async error handling in media-ended event continuation.
+- Added startup schema verification and repair helpers for required tables, columns, and indexes.
+- Added VS Code tasks for local DB backup/reset and scenario-driven launch orchestration.
 
 ## Breaking Changes (if any)
 - None.
