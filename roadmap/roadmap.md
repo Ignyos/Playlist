@@ -45,6 +45,13 @@ Item detail docs:
   - Details: roadmap/items/p1-update-experience-refinement.md
 
 ## Next
+- [ ] P1 Corrupted media handling and persistent skip
+  - Status: Planned
+  - Target: v1.3.1
+  - Why it matters: Prevents playback from stalling on bad files and keeps playlist sessions reliable across repeated restarts.
+  - Notes: Flag errored media, show warning state in UI, and continue using active playback mode while skipping flagged items.
+  - Details: roadmap/items/p1-corrupted-media-handling-and-persistent-skip.md
+
 - [ ] P1 Playlist management enhancements
   - Status: Planned
   - Target: v1.3.0
