@@ -23,36 +23,10 @@ Item detail docs:
 - Detailed documentation for roadmap items lives in `roadmap/items/`.
 
 ## Now
-- [ ] P1 Per-playlist playback behavior modes
-  - Status: Planned
-  - Target: v1.3.0
-  - Why it matters: Gives users control over how playback continues after each video and supports common queue behavior expectations.
-  - Notes: Add per-playlist modes for auto-next, loop, and shuffle variants.
-  - Details: roadmap/items/p1-per-playlist-playback-behavior-modes.md
-
-- [ ] P1 Media player usability polish
-  - Status: Planned
-  - Target: v1.2.11
-  - Why it matters: Makes common playback actions faster and clearer for daily use.
-  - Notes: Improve control feedback and edge-case behavior around pause/seek/stop.
-  - Details: roadmap/items/p1-media-player-usability-polish.md
-
-- [ ] P1 Update experience refinement
-  - Status: Planned
-  - Target: v1.2.11
-  - Why it matters: Helps users discover and apply updates with less friction.
-  - Notes: Review inline notice states and install flow messaging.
-  - Details: roadmap/items/p1-update-experience-refinement.md
+ - None currently. Top priorities are in Next.
 
 ## Next
-- [ ] P1 Corrupted media handling and persistent skip
-  - Status: Planned
-  - Target: v1.3.1
-  - Why it matters: Prevents playback from stalling on bad files and keeps playlist sessions reliable across repeated restarts.
-  - Notes: Flag errored media, show warning state in UI, and continue using active playback mode while skipping flagged items.
-  - Details: roadmap/items/p1-corrupted-media-handling-and-persistent-skip.md
-
-- [ ] P1 Playlist management enhancements
+- [ ] P1 Playlist management enhancements - roadmap/items/p1-playlist-management-enhancements.md
   - Status: Planned
   - Target: v1.3.0
   - Why it matters: Improves organization for larger libraries.
@@ -98,6 +72,10 @@ Item detail docs:
   - Why it matters: Could enable community-driven enhancements.
 
 ## Recently Completed
+- [x] P1 Per-playlist playback behavior modes (v1.3.0) - roadmap/items/p1-per-playlist-playback-behavior-modes.md
+- [x] P1 Media player usability polish (v1.2.11) - roadmap/items/p1-media-player-usability-polish.md
+- [x] P1 Update experience refinement (v1.2.11) - roadmap/items/p1-update-experience-refinement.md
+- [x] P1 Corrupted media handling and persistent skip (v1.3.1) - roadmap/items/p1-corrupted-media-handling-and-persistent-skip.md
 - [x] P0 Playback stability hardening (v1.2.11) - roadmap/items/p0-playback-stability-hardening.md
 - [x] Context-aware playlist right-click menu (item actions vs empty-space new playlist)
 - [x] Playback and settings DbContext concurrency reliability improvements

@@ -13,7 +13,7 @@ namespace Playlist.Services
 {
     public class UpdateService
     {
-        private const string GitHubApiUrl = "https://api.github.com/repos/Ignyos/Playlist/releases/latest";
+        private const string GitHubApiUrl = "https://api.github.com/repos/Ignyos/Playlist/releases?per_page=50";
         private const string InstallerAssetName = "PlaylistSetup.exe";
         private readonly HttpClient _httpClient;
 
@@ -111,12 +111,52 @@ namespace Playlist.Services
                 response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync();
-                var release = JsonSerializer.Deserialize<GitHubRelease>(content, new JsonSerializerOptions
+                var releases = JsonSerializer.Deserialize<List<GitHubRelease>>(content, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
 
-                return release;
+                if (releases == null || releases.Count == 0)
+                {
+                    return null;
+                }
+
+                var stableCandidates = releases
+                    .Where(r => !r.Draft && !r.Prerelease)
+                    .Select(r => new
+                    {
+                        Release = r,
+                        HasInstaller = r.Assets?.Any(a =>
+                            string.Equals(a.Name, InstallerAssetName, StringComparison.OrdinalIgnoreCase)
+                            && !string.IsNullOrWhiteSpace(a.BrowserDownloadUrl)) == true,
+                        Parsed = TryParseVersion(r.Version, out var parsed) ? parsed : null
+                    })
+                    .Where(x => x.HasInstaller && x.Parsed != null)
+                    .OrderByDescending(x => x.Parsed)
+                    .ThenByDescending(x => x.Release.PublishedAt)
+                    .ToList();
+
+                if (stableCandidates.Count > 0)
+                {
+                    return stableCandidates[0].Release;
+                }
+
+                var prereleaseCandidates = releases
+                    .Where(r => !r.Draft && r.Prerelease)
+                    .Select(r => new
+                    {
+                        Release = r,
+                        HasInstaller = r.Assets?.Any(a =>
+                            string.Equals(a.Name, InstallerAssetName, StringComparison.OrdinalIgnoreCase)
+                            && !string.IsNullOrWhiteSpace(a.BrowserDownloadUrl)) == true,
+                        Parsed = TryParseVersion(r.Version, out var parsed) ? parsed : null
+                    })
+                    .Where(x => x.HasInstaller && x.Parsed != null)
+                    .OrderByDescending(x => x.Parsed)
+                    .ThenByDescending(x => x.Release.PublishedAt)
+                    .ToList();
+
+                return prereleaseCandidates.Count > 0 ? prereleaseCandidates[0].Release : null;
             }
             catch
             {
@@ -221,6 +261,15 @@ namespace Playlist.Services
 
         [JsonPropertyName("html_url")]
         public string? HtmlUrl { get; set; }
+
+        [JsonPropertyName("draft")]
+        public bool Draft { get; set; }
+
+        [JsonPropertyName("prerelease")]
+        public bool Prerelease { get; set; }
+
+        [JsonPropertyName("published_at")]
+        public DateTimeOffset? PublishedAt { get; set; }
 
         [JsonPropertyName("assets")]
         public List<GitHubReleaseAsset>? Assets { get; set; }

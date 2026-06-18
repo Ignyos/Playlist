@@ -7,6 +7,7 @@
 *.user
 *.userosscache
 *.sln.docstates
+/temp/
 
 ## Release Candidate commit message files
 rc_*.txt

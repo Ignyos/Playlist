@@ -1,6 +1,8 @@
 using System;
 using System.Windows;
+using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
+using Playlist.Models;
 using Playlist.Services;
 
 namespace Playlist.Views;
@@ -47,6 +49,19 @@ public partial class SettingsWindow : Window
             {
                 FullscreenDefaultRadio.IsChecked = true;
             }
+
+            // Load default playback mode for new playlists
+            var defaultMode = _settingService.GetDefaultPlaylistPlaybackMode();
+            for (var i = 0; i < DefaultPlaybackModeComboBox.Items.Count; i++)
+            {
+                if (DefaultPlaybackModeComboBox.Items[i] is ComboBoxItem comboItem
+                    && comboItem.Tag is PlaylistPlaybackMode itemMode
+                    && itemMode == defaultMode)
+                {
+                    DefaultPlaybackModeComboBox.SelectedIndex = i;
+                    break;
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -83,6 +98,26 @@ public partial class SettingsWindow : Window
         {
             var behavior = FullscreenAutoRadio.IsChecked == true ? "Auto" : "Default";
             _settingService.SetFullscreenBehavior(behavior);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error saving settings: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void DefaultPlaybackModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoadingSettings) return;
+
+        if (DefaultPlaybackModeComboBox.SelectedItem is not ComboBoxItem selectedItem
+            || selectedItem.Tag is not PlaylistPlaybackMode selectedMode)
+        {
+            return;
+        }
+
+        try
+        {
+            _settingService.SetDefaultPlaylistPlaybackMode(selectedMode);
         }
         catch (Exception ex)
         {

@@ -1,9 +1,11 @@
 using System.Collections.ObjectModel;
+using System.Collections;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -44,6 +46,53 @@ public class ProgressToWidthConverter : IMultiValueConverter
     }
 }
 
+public class PlaylistQueueStateGroupConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        return value is bool isCompleted && isCompleted ? "Completed" : "Queue";
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class CompletedGroupHeaderVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        return string.Equals(value as string, "Completed", StringComparison.OrdinalIgnoreCase)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class PlaylistViewModelComparer : IComparer
+{
+    public int Compare(object? x, object? y)
+    {
+        if (x is not PlaylistViewModel left || y is not PlaylistViewModel right)
+        {
+            return 0;
+        }
+
+        var stateComparison = left.IsCompleted.CompareTo(right.IsCompleted);
+        if (stateComparison != 0)
+        {
+            return stateComparison;
+        }
+
+        return string.Compare(left.Name, right.Name, StringComparison.OrdinalIgnoreCase);
+    }
+}
+
 /// <summary>
 /// Interaction logic for MainWindow.xaml
 /// </summary>
@@ -53,9 +102,10 @@ public partial class MainWindow : Window
     private readonly ISettingService _settingService;
     private readonly UpdateService _updateService;
     private readonly ObservableCollection<PlaylistViewModel> _playlists;
+    private readonly ICollectionView _playlistsView;
     private readonly ObservableCollection<PlaylistItemViewModel> _playlistItems;
     private PlaylistViewModel? _selectedPlaylist;
-    private string _currentSort = "Name_Asc"; // Default sort
+    private PlaylistViewModel? _contextMenuPlaylist;
     private Point _dragStartPoint;
     private ListBoxInsertionAdorner? _insertionAdorner;
     private int _dragTargetIndex = -1; // Track which item index we're dragging over
@@ -70,6 +120,7 @@ public partial class MainWindow : Window
     private readonly Random _random = new();
     private readonly HashSet<int> _shufflePlayOncePlayedItemIds = [];
     private int? _shufflePlayOncePlaylistId;
+    private bool _isPlaylistDoubleClickPlayInProgress;
 
     public MainWindow()
     {
@@ -86,6 +137,12 @@ public partial class MainWindow : Window
         Title = $"Playlist v{version?.Major}.{version?.Minor}.{version?.Build}";
         
         _playlists = new ObservableCollection<PlaylistViewModel>();
+        _playlistsView = CollectionViewSource.GetDefaultView(_playlists);
+        if (_playlistsView is ListCollectionView listCollectionView)
+        {
+            listCollectionView.CustomSort = new PlaylistViewModelComparer();
+        }
+        _playlistsView.GroupDescriptions.Add(new PropertyGroupDescription(nameof(PlaylistViewModel.IsCompleted), new PlaylistQueueStateGroupConverter()));
         _playlistItems = new ObservableCollection<PlaylistItemViewModel>();
         
         // Initialize database with proper migration handling
@@ -100,7 +157,7 @@ public partial class MainWindow : Window
         _mediaPlayerService = new MediaPlayerService(_dbContextFactory);
         _mediaPlayerService.MediaEnded += OnMediaEnded;
         
-        PlaylistsListBox.ItemsSource = _playlists;
+        PlaylistsListBox.ItemsSource = _playlistsView;
         PlaylistItemsListBox.ItemsSource = _playlistItems;
         
         PlaylistsListBox.SelectionChanged += PlaylistsListBox_SelectionChanged;
@@ -148,6 +205,16 @@ public partial class MainWindow : Window
         var isAvailable = _settingService.GetLastKnownUpdateAvailable();
         var downloadUrl = _settingService.GetLastKnownUpdateDownloadUrl();
         var latestVersion = _settingService.GetLastKnownUpdateVersion();
+
+        if (isAvailable
+            && TryParseVersionToken(_updateService.GetCurrentVersion(), out var currentParsed)
+            && TryParseVersionToken(latestVersion, out var latestParsed)
+            && currentParsed >= latestParsed)
+        {
+            _settingService.SetLastKnownUpdateStatus(false, string.Empty, string.Empty);
+            SetUpdateNoticeVisible(false, string.Empty, string.Empty);
+            return;
+        }
 
         if (isAvailable && !string.IsNullOrWhiteSpace(downloadUrl))
         {
@@ -261,21 +328,9 @@ public partial class MainWindow : Window
         var service = new PlaylistService(context);
         var playlists = service.GetAllPlaylists(searchTerm);
         
-        // Apply sorting
-        IEnumerable<Models.Playlist> sortedPlaylists = _currentSort switch
-        {
-            "Name_Asc" => playlists.OrderBy(p => p.Name),
-            "Name_Desc" => playlists.OrderByDescending(p => p.Name),
-            "Created_Asc" => playlists.OrderBy(p => p.Created),
-            "Created_Desc" => playlists.OrderByDescending(p => p.Created),
-            "Played_Asc" => playlists.OrderBy(p => p.LastPlayed),
-            "Played_Desc" => playlists.OrderByDescending(p => p.LastPlayed),
-            _ => playlists.OrderBy(p => p.Name)
-        };
-        
         _playlists.Clear();
         
-        foreach (var playlist in sortedPlaylists)
+        foreach (var playlist in playlists)
         {
             _playlists.Add(new PlaylistViewModel
             {
@@ -283,9 +338,12 @@ public partial class MainWindow : Window
                 Name = playlist.Name,
                 Created = playlist.Created,
                 LastPlayed = playlist.LastPlayed,
-                PlaybackMode = playlist.PlaybackMode
+                PlaybackMode = playlist.PlaybackMode,
+                IsCompleted = playlist.IsCompleted
             });
         }
+
+        _playlistsView.Refresh();
     }
 
     private void LoadPlaylistItems(int playlistId)
@@ -360,6 +418,125 @@ public partial class MainWindow : Window
         }
     }
 
+    private void PlaylistsListBox_DoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (_isPlaylistDoubleClickPlayInProgress)
+        {
+            e.Handled = true;
+            return;
+        }
+
+        if (sender is not ListBox listBox)
+        {
+            return;
+        }
+
+        var clickedElement = e.OriginalSource as DependencyObject;
+        var clickedItem = ItemsControl.ContainerFromElement(listBox, clickedElement) as ListBoxItem;
+        if (clickedItem?.DataContext is not PlaylistViewModel selectedPlaylist)
+        {
+            return;
+        }
+
+        _isPlaylistDoubleClickPlayInProgress = true;
+
+        try
+        {
+            if (!ReferenceEquals(listBox.SelectedItem, selectedPlaylist))
+            {
+                listBox.SelectedItem = selectedPlaylist;
+            }
+
+            using var context = _dbContextFactory.CreateDbContext();
+            var service = new PlaylistService(context);
+            var playlist = service.GetPlaylistById(selectedPlaylist.Id);
+            if (playlist == null)
+            {
+                return;
+            }
+
+            var orderedItems = playlist.Items
+                .Where(i => i.DeleteDate == null)
+                .OrderBy(i => i.Ordinal)
+                .ToList();
+
+            var startItem = SelectStartItemForMode(playlist, orderedItems);
+            if (startItem == null)
+            {
+                MessageBox.Show("No playable items were found in this playlist.", "No Playable Items", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var viewModelItem = _playlistItems.FirstOrDefault(i => i.Id == startItem.Id);
+            if (viewModelItem == null)
+            {
+                LoadPlaylistItems(selectedPlaylist.Id);
+                viewModelItem = _playlistItems.FirstOrDefault(i => i.Id == startItem.Id);
+            }
+
+            if (viewModelItem == null)
+            {
+                MessageBox.Show("The selected playlist item could not be loaded.", "Playback Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            PlaylistItemsListBox.SelectedItem = viewModelItem;
+            PlaylistItemsListBox.ScrollIntoView(viewModelItem);
+
+            var fromStart = ShouldStartFromBeginning(startItem.TimeStamp, startItem.Duration);
+            PlayMedia(viewModelItem, fromStart);
+            e.Handled = true;
+        }
+        finally
+        {
+            _isPlaylistDoubleClickPlayInProgress = false;
+        }
+    }
+
+    private Models.PlaylistItem? SelectStartItemForMode(Models.Playlist playlist, List<Models.PlaylistItem> orderedItems)
+    {
+        if (orderedItems.Count == 0)
+        {
+            return null;
+        }
+
+        var playableItems = orderedItems
+            .Where(i => File.Exists(i.Path))
+            .ToList();
+
+        if (playableItems.Count == 0)
+        {
+            return null;
+        }
+
+        var selectedPlayableItem = playlist.SelectedItemId.HasValue
+            ? playableItems.FirstOrDefault(i => i.Id == playlist.SelectedItemId.Value)
+            : null;
+
+        return playlist.PlaybackMode switch
+        {
+            Models.PlaylistPlaybackMode.StopAfterCurrent => selectedPlayableItem ?? playableItems[0],
+            Models.PlaylistPlaybackMode.SequentialAutoNext => selectedPlayableItem ?? playableItems[0],
+            Models.PlaylistPlaybackMode.SequentialAutoNextLoop => selectedPlayableItem ?? playableItems[0],
+            Models.PlaylistPlaybackMode.ShuffleContinuous => playableItems[_random.Next(playableItems.Count)],
+            Models.PlaylistPlaybackMode.ShufflePlayOnce => SelectShufflePlayOnceStart(playableItems, playlist.Id),
+            _ => playableItems[0]
+        };
+    }
+
+    private Models.PlaylistItem? SelectShufflePlayOnceStart(List<Models.PlaylistItem> playableItems, int playlistId)
+    {
+        if (playableItems.Count == 0)
+        {
+            return null;
+        }
+
+        // Explicit user start action should begin a fresh shuffle-play-once session.
+        ResetShufflePlayOnceSession(playlistId);
+
+        return playableItems[_random.Next(playableItems.Count)];
+    }
+
     private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         LoadPlaylists(SearchTextBox.Text);
@@ -373,37 +550,31 @@ public partial class MainWindow : Window
 
     private void SortByCreatedDesc_Click(object sender, RoutedEventArgs e)
     {
-        _currentSort = "Created_Desc";
         LoadPlaylists(SearchTextBox.Text);
     }
 
     private void SortByCreatedAsc_Click(object sender, RoutedEventArgs e)
     {
-        _currentSort = "Created_Asc";
         LoadPlaylists(SearchTextBox.Text);
     }
 
     private void SortByPlayedDesc_Click(object sender, RoutedEventArgs e)
     {
-        _currentSort = "Played_Desc";
         LoadPlaylists(SearchTextBox.Text);
     }
 
     private void SortByPlayedAsc_Click(object sender, RoutedEventArgs e)
     {
-        _currentSort = "Played_Asc";
         LoadPlaylists(SearchTextBox.Text);
     }
 
     private void SortByNameAsc_Click(object sender, RoutedEventArgs e)
     {
-        _currentSort = "Name_Asc";
         LoadPlaylists(SearchTextBox.Text);
     }
 
     private void SortByNameDesc_Click(object sender, RoutedEventArgs e)
     {
-        _currentSort = "Name_Desc";
         LoadPlaylists(SearchTextBox.Text);
     }
 
@@ -464,12 +635,48 @@ public partial class MainWindow : Window
 
         if (clickedItem != null)
         {
-            clickedItem.IsSelected = true;
+            _contextMenuPlaylist = clickedItem.DataContext as PlaylistViewModel;
             listBox.ContextMenu = PlaylistsItemContextMenu;
+
+            if (_contextMenuPlaylist is PlaylistViewModel selectedPlaylist)
+            {
+                ConfigurePlaylistContextMenu(selectedPlaylist);
+            }
         }
         else
         {
+            _contextMenuPlaylist = null;
             listBox.ContextMenu = listBox.Resources["PlaylistsEmptyContextMenu"] as ContextMenu;
+        }
+    }
+
+    private void PlaylistsListBox_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not ListBox listBox)
+        {
+            return;
+        }
+
+        var clickedElement = e.OriginalSource as DependencyObject;
+        var clickedItem = ItemsControl.ContainerFromElement(listBox, clickedElement) as ListBoxItem;
+
+        if (clickedItem?.DataContext is PlaylistViewModel selectedPlaylist)
+        {
+            _contextMenuPlaylist = selectedPlaylist;
+            listBox.ContextMenu = PlaylistsItemContextMenu;
+            ConfigurePlaylistContextMenu(selectedPlaylist);
+        }
+        else
+        {
+            _contextMenuPlaylist = null;
+            listBox.ContextMenu = listBox.Resources["PlaylistsEmptyContextMenu"] as ContextMenu;
+        }
+
+        if (listBox.ContextMenu != null)
+        {
+            listBox.ContextMenu.PlacementTarget = listBox;
+            listBox.ContextMenu.IsOpen = true;
+            e.Handled = true;
         }
     }
 
@@ -634,7 +841,8 @@ public partial class MainWindow : Window
             {
                 using var context = _dbContextFactory.CreateDbContext();
                 var service = new PlaylistService(context);
-                var newPlaylist = service.CreatePlaylist(window.PlaylistName, window.SelectedFiles.ToList());
+                var defaultPlaybackMode = _settingService.GetDefaultPlaylistPlaybackMode();
+                var newPlaylist = service.CreatePlaylist(window.PlaylistName, window.SelectedFiles.ToList(), defaultPlaybackMode);
                 LoadPlaylists();
                 
                 // Select the newly created playlist
@@ -663,7 +871,8 @@ public partial class MainWindow : Window
 
     private void EditPlaylist_Click(object sender, RoutedEventArgs e)
     {
-        if (_selectedPlaylist == null) return;
+        var targetPlaylist = GetContextMenuTargetPlaylist();
+        if (targetPlaylist == null) return;
 
         var logFile = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Playlist", "debug.log");
         void Log(string message)
@@ -677,7 +886,7 @@ public partial class MainWindow : Window
         }
 
         // Window loads its own data using the playlist ID
-        var window = new NewPlaylistWindow(_selectedPlaylist.Id);
+        var window = new NewPlaylistWindow(targetPlaylist.Id);
         if (window.ShowDialog() == true || window.DialogResultValue)
         {
             try
@@ -685,16 +894,16 @@ public partial class MainWindow : Window
                 using var context = _dbContextFactory.CreateDbContext();
                 var service = new PlaylistService(context);
                 
-                Log($"[EditPlaylist] Starting smart merge for playlist ID: {_selectedPlaylist.Id}");
+            Log($"[EditPlaylist] Starting smart merge for playlist ID: {targetPlaylist.Id}");
                 
                 // Update playlist name
                 Log($"[EditPlaylist] Updating name to: {window.PlaylistName}");
-                service.UpdatePlaylist(_selectedPlaylist.Id, window.PlaylistName);
+            service.UpdatePlaylist(targetPlaylist.Id, window.PlaylistName);
                 Log("[EditPlaylist] Name updated successfully");
                 
                 // Get current items
                 Log("[EditPlaylist] Getting current items...");
-                var currentItems = service.GetPlaylistItems(_selectedPlaylist.Id);
+            var currentItems = service.GetPlaylistItems(targetPlaylist.Id);
                 Log($"[EditPlaylist] Found {currentItems?.Count ?? 0} current items");
                 
                 if (currentItems == null)
@@ -724,7 +933,7 @@ public partial class MainWindow : Window
                 if (pathsToAdd.Any())
                 {
                     Log($"[EditPlaylist] Adding {pathsToAdd.Count} new files");
-                    service.AddItemsToPlaylist(_selectedPlaylist.Id, pathsToAdd);
+                    service.AddItemsToPlaylist(targetPlaylist.Id, pathsToAdd);
                 }
                 else
                 {
@@ -737,7 +946,7 @@ public partial class MainWindow : Window
                 
                 // Reload UI - save the selected ID first!
                 Log("[EditPlaylist] Reloading UI...");
-                var selectedId = _selectedPlaylist.Id;
+                var selectedId = targetPlaylist.Id;
                 LoadPlaylists();
                 
                 // Re-select the edited playlist
@@ -758,48 +967,77 @@ public partial class MainWindow : Window
         }
     }
 
-    private void PlaylistDetails_Click(object sender, RoutedEventArgs e)
+    private void ConfigurePlaylistContextMenu(PlaylistViewModel selectedPlaylist)
     {
-        if (_selectedPlaylist == null)
+        foreach (var playbackModeItem in GetPlaybackModeMenuItems())
+        {
+            if (playbackModeItem.Tag is Models.PlaylistPlaybackMode mode)
+            {
+                playbackModeItem.IsChecked = mode == selectedPlaylist.PlaybackMode;
+            }
+        }
+    }
+
+    private PlaylistViewModel? GetContextMenuTargetPlaylist()
+    {
+        return _contextMenuPlaylist ?? _selectedPlaylist;
+    }
+
+    private IEnumerable<MenuItem> GetPlaybackModeMenuItems()
+    {
+        yield return StopAfterCurrentPlaybackModeMenuItem;
+        yield return SequentialAutoNextPlaybackModeMenuItem;
+        yield return SequentialAutoNextLoopPlaybackModeMenuItem;
+        yield return ShuffleContinuousPlaybackModeMenuItem;
+        yield return ShufflePlayOncePlaybackModeMenuItem;
+    }
+
+    private void PlaylistPlaybackModeMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        var targetPlaylist = GetContextMenuTargetPlaylist();
+        if (targetPlaylist == null)
         {
             MessageBox.Show("Please select a playlist first.", "No Selection", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        var selectedPlaylistId = _selectedPlaylist.Id;
+        if (sender is not MenuItem menuItem || menuItem.Tag is not Models.PlaylistPlaybackMode selectedMode)
+        {
+            return;
+        }
 
         try
         {
-            var detailsWindow = new PlaylistDetailsWindow(selectedPlaylistId)
-            {
-                Owner = this
-            };
+            using var context = _dbContextFactory.CreateDbContext();
+            var service = new PlaylistService(context);
+            var updated = service.UpdatePlaylistPlaybackMode(targetPlaylist.Id, selectedMode);
 
-            detailsWindow.ShowDialog();
-            LoadPlaylists(SearchTextBox.Text);
-
-            var refreshed = _playlists.FirstOrDefault(p => p.Id == selectedPlaylistId);
-            if (refreshed != null)
+            if (!updated)
             {
-                PlaylistsListBox.SelectedItem = refreshed;
+                MessageBox.Show("The playlist could not be updated.", "Update Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
             }
+
+            targetPlaylist.PlaybackMode = selectedMode;
+            ConfigurePlaylistContextMenu(targetPlaylist);
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Error opening playlist details: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show($"Error saving playback mode: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
     private void RemovePlaylist_Click(object sender, RoutedEventArgs e)
     {
-        if (_selectedPlaylist == null)
+        var targetPlaylist = GetContextMenuTargetPlaylist();
+        if (targetPlaylist == null)
         {
             MessageBox.Show("Please select a playlist to remove.", "No Selection", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         var result = MessageBox.Show(
-            $"Are you sure you want to remove the playlist '{_selectedPlaylist.Name}'?",
+            $"Are you sure you want to remove the playlist '{targetPlaylist.Name}'?",
             "Confirm Removal",
             MessageBoxButton.YesNo,
             MessageBoxImage.Question);
@@ -810,7 +1048,7 @@ public partial class MainWindow : Window
             {
                 using var context = _dbContextFactory.CreateDbContext();
                 var service = new PlaylistService(context);
-                service.DeletePlaylist(_selectedPlaylist.Id);
+                service.DeletePlaylist(targetPlaylist.Id);
                 LoadPlaylists();
                 _playlistItems.Clear();
             }
@@ -856,6 +1094,28 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             MessageBox.Show($"Error marking item as completed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void MarkItemUnwatched_Click(object sender, RoutedEventArgs e)
+    {
+        var item = PlaylistItemsListBox.SelectedItem as PlaylistItemViewModel;
+        if (item == null) return;
+
+        try
+        {
+            using var context = _dbContextFactory.CreateDbContext();
+            var service = new PlaylistService(context);
+            service.UpdatePlaylistItemTimestamp(item.Id, 0);
+
+            if (_selectedPlaylist != null)
+            {
+                LoadPlaylistItems(_selectedPlaylist.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error marking item as unwatched: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -916,20 +1176,27 @@ public partial class MainWindow : Window
         var item = PlaylistItemsListBox.SelectedItem as PlaylistItemViewModel;
         if (item == null) return;
 
-        // If there's a saved timestamp, check if it's at 100% (completed)
         using var context = _dbContextFactory.CreateDbContext();
         var dbItem = context.PlaylistItems.FirstOrDefault(i => i.Id == item.Id);
-        
-        bool isAtCompletion = false;
-        if (dbItem?.TimeStamp != null && dbItem.TimeStamp > 0 && dbItem.Duration.HasValue && dbItem.Duration > 0)
+
+        PlayMedia(item, fromStart: ShouldStartFromBeginning(dbItem?.TimeStamp, dbItem?.Duration));
+    }
+
+    private static bool ShouldStartFromBeginning(int? timeStampSeconds, long? durationMilliseconds)
+    {
+        if (!timeStampSeconds.HasValue || timeStampSeconds.Value <= 0)
         {
-            var timeStampMs = dbItem.TimeStamp.Value * 1000L;
-            int progress = (int)((timeStampMs * 100) / dbItem.Duration.Value);
-            isAtCompletion = progress >= 100;
+            return true;
         }
 
-        // Start from beginning if at completion, otherwise continue from timestamp
-        PlayMedia(item, fromStart: isAtCompletion || (dbItem?.TimeStamp == null || dbItem.TimeStamp == 0));
+        if (!durationMilliseconds.HasValue || durationMilliseconds.Value <= 0)
+        {
+            return false;
+        }
+
+        var timeStampMs = timeStampSeconds.Value * 1000L;
+        var progress = (int)((timeStampMs * 100) / durationMilliseconds.Value);
+        return progress >= 100;
     }
 
     private async void PlayMedia(PlaylistItemViewModel item, bool fromStart)
@@ -1124,18 +1391,40 @@ public partial class MainWindow : Window
 
     private async void UpdateNotice_Click(object sender, RoutedEventArgs e)
     {
-        if (_isInlineUpdateDownloadRunning || string.IsNullOrWhiteSpace(_inlineUpdateDownloadUrl))
+        if (_isInlineUpdateDownloadRunning)
         {
             return;
         }
 
         _isInlineUpdateDownloadRunning = true;
-        UpdateNoticeMenuItem.Header = "Downloading update...";
+        UpdateNoticeMenuItem.Header = "Checking latest update...";
         UpdateNoticeMenuItem.IsEnabled = false;
 
         try
         {
-            var installerPath = await _updateService.DownloadInstallerAsync(_inlineUpdateDownloadUrl);
+            var result = await _updateService.CheckForUpdatesAsync();
+            if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+            {
+                _isInlineUpdateDownloadRunning = false;
+                SetUpdateNoticeVisible(true, _inlineUpdateDownloadUrl, _settingService.GetLastKnownUpdateVersion());
+                MessageBox.Show(result.ErrorMessage, "Update Check Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (!result.IsUpdateAvailable || string.IsNullOrWhiteSpace(result.DownloadUrl))
+            {
+                _settingService.SetLastKnownUpdateStatus(false, string.Empty, string.Empty);
+                SetUpdateNoticeVisible(false, string.Empty, string.Empty);
+                _isInlineUpdateDownloadRunning = false;
+                MessageBox.Show("You are already on the latest version.", "Up To Date", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            _settingService.SetLastKnownUpdateStatus(true, result.LatestVersion, result.DownloadUrl);
+            _inlineUpdateDownloadUrl = result.DownloadUrl;
+
+            UpdateNoticeMenuItem.Header = "Downloading update...";
+            var installerPath = await _updateService.DownloadInstallerAsync(result.DownloadUrl);
 
             Process.Start(new ProcessStartInfo
             {
@@ -1151,6 +1440,30 @@ public partial class MainWindow : Window
             SetUpdateNoticeVisible(true, _inlineUpdateDownloadUrl, _settingService.GetLastKnownUpdateVersion());
             MessageBox.Show($"Unable to download or start the installer: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
+    }
+
+    private static bool TryParseVersionToken(string input, out Version version)
+    {
+        version = new Version(0, 0, 0);
+
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return false;
+        }
+
+        var match = System.Text.RegularExpressions.Regex.Match(input, @"\d+(?:\.\d+){1,3}");
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        if (!Version.TryParse(match.Value, out var parsed) || parsed == null)
+        {
+            return false;
+        }
+
+        version = parsed;
+        return true;
     }
 
     private void OpenUrl(string url)

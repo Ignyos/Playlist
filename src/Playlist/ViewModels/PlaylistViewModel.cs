@@ -9,6 +9,7 @@ public class PlaylistViewModel : ViewModelBase
     private DateTime _created;
     private DateTime _lastPlayed;
     private PlaylistPlaybackMode _playbackMode = PlaylistPlaybackMode.StopAfterCurrent;
+    private bool _isCompleted;
 
     public int Id { get; set; }
 
@@ -34,6 +35,12 @@ public class PlaylistViewModel : ViewModelBase
     {
         get => _playbackMode;
         set => SetProperty(ref _playbackMode, value);
+    }
+
+    public bool IsCompleted
+    {
+        get => _isCompleted;
+        set => SetProperty(ref _isCompleted, value);
     }
 
     public string DisplayText => Name;
