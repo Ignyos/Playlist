@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Playlist.Data;
+using Playlist.Models;
 
 namespace Playlist.Services;
 
@@ -22,6 +23,10 @@ public interface ISettingService
     int GetPlaybackVolume();
 
     void SetPlaybackVolume(int volume);
+
+    PlaylistPlaybackMode GetDefaultPlaylistPlaybackMode();
+
+    void SetDefaultPlaylistPlaybackMode(PlaylistPlaybackMode mode);
 
     DateTime? GetLastUpdateCheckAttemptUtc();
 
@@ -44,6 +49,7 @@ public class SettingService : ISettingService
     private const string FullscreenBehaviorKey = "FullscreenBehavior";
     private const string RunOnStartupKey = "RunOnStartup";
     private const string PlaybackVolumeKey = "PlaybackVolume";
+    private const string DefaultPlaylistPlaybackModeKey = "DefaultPlaylistPlaybackMode";
     private const string LastUpdateCheckAttemptUtcKey = "LastUpdateCheckAttemptUtc";
     private const string LastKnownUpdateAvailableKey = "LastKnownUpdateAvailable";
     private const string LastKnownUpdateVersionKey = "LastKnownUpdateVersion";
@@ -101,6 +107,27 @@ public class SettingService : ISettingService
     public void SetPlaybackVolume(int volume)
     {
         SetSettingValue(PlaybackVolumeKey, Math.Clamp(volume, 0, 100).ToString());
+    }
+
+    public PlaylistPlaybackMode GetDefaultPlaylistPlaybackMode()
+    {
+        var rawValue = GetSettingValue(DefaultPlaylistPlaybackModeKey, ((int)PlaylistPlaybackMode.StopAfterCurrent).ToString());
+        if (!int.TryParse(rawValue, out var modeValue))
+        {
+            return PlaylistPlaybackMode.StopAfterCurrent;
+        }
+
+        if (!Enum.IsDefined(typeof(PlaylistPlaybackMode), modeValue))
+        {
+            return PlaylistPlaybackMode.StopAfterCurrent;
+        }
+
+        return (PlaylistPlaybackMode)modeValue;
+    }
+
+    public void SetDefaultPlaylistPlaybackMode(PlaylistPlaybackMode mode)
+    {
+        SetSettingValue(DefaultPlaylistPlaybackModeKey, ((int)mode).ToString());
     }
 
     public DateTime? GetLastUpdateCheckAttemptUtc()

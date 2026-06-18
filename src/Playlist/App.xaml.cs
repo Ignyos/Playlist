@@ -89,7 +89,9 @@ CREATE TABLE IF NOT EXISTS Playlists (
     LastPlayed TEXT NOT NULL,
     SelectedItemId INTEGER NULL,
     DeleteDate TEXT NULL,
-    PlaybackMode INTEGER NOT NULL DEFAULT 0
+    PlaybackMode INTEGER NOT NULL DEFAULT 0,
+    IsCompleted INTEGER NOT NULL DEFAULT 0,
+    QueueOrder INTEGER NULL
 );");
 
         changed |= EnsureTableExists(connection, "PlaylistItems", @"
@@ -133,6 +135,8 @@ CREATE TABLE IF NOT EXISTS ErrorLogs (
 );");
 
         changed |= EnsureColumnExists(connection, "Playlists", "PlaybackMode", "INTEGER NOT NULL DEFAULT 0");
+        changed |= EnsureColumnExists(connection, "Playlists", "IsCompleted", "INTEGER NOT NULL DEFAULT 0");
+        changed |= EnsureColumnExists(connection, "Playlists", "QueueOrder", "INTEGER NULL");
         changed |= EnsureColumnExists(connection, "Playlists", "SelectedItemId", "INTEGER NULL");
         changed |= EnsureColumnExists(connection, "Playlists", "DeleteDate", "TEXT NULL");
 
@@ -147,7 +151,7 @@ CREATE TABLE IF NOT EXISTS ErrorLogs (
     {
         var requiredColumns = new Dictionary<string, string[]>
         {
-            ["Playlists"] = ["Id", "Name", "Created", "LastPlayed", "SelectedItemId", "DeleteDate", "PlaybackMode"],
+            ["Playlists"] = ["Id", "Name", "Created", "LastPlayed", "SelectedItemId", "DeleteDate", "PlaybackMode", "IsCompleted", "QueueOrder"],
             ["PlaylistItems"] = ["Id", "PlaylistId", "Ordinal", "Path", "Name", "LastPlayed", "TimeStamp", "Duration", "DeleteDate"],
             ["Settings"] = ["Key", "Value"],
             ["History"] = ["Id", "PlaylistId", "PlaylistItemId", "TimeStamp"],

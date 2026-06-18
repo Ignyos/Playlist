@@ -14,6 +14,10 @@ public class Playlist
     public DateTime LastPlayed { get; set; }
 
     public PlaylistPlaybackMode PlaybackMode { get; set; } = PlaylistPlaybackMode.StopAfterCurrent;
+
+    public bool IsCompleted { get; set; }
+
+    public int? QueueOrder { get; set; }
     
     public int? SelectedItemId { get; set; }
     

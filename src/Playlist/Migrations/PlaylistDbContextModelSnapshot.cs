@@ -81,6 +81,9 @@ namespace Playlist.Migrations
                     b.Property<DateTime?>("DeleteDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("LastPlayed")
                         .HasColumnType("TEXT");
 
@@ -89,6 +92,9 @@ namespace Playlist.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<int>("PlaybackMode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("QueueOrder")
                         .HasColumnType("INTEGER");
 
                     b.Property<int?>("SelectedItemId")

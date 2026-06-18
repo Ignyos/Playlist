@@ -26,7 +26,12 @@ public class PlaylistService
             query = query.Where(p => p.Name.Contains(searchTerm));
         }
 
-        return query.OrderBy(p => p.Name).ToList();
+        var playlists = query.ToList();
+
+        return playlists
+            .OrderBy(p => p.IsCompleted)
+            .ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     public Models.Playlist? GetPlaylistById(int id)
@@ -36,14 +41,15 @@ public class PlaylistService
             .FirstOrDefault(p => p.Id == id && p.DeleteDate == null);
     }
 
-    public Models.Playlist CreatePlaylist(string name, List<string> filePaths)
+    public Models.Playlist CreatePlaylist(string name, List<string> filePaths, PlaylistPlaybackMode defaultPlaybackMode)
     {
         var playlist = new Models.Playlist
         {
             Name = name,
             Created = DateTime.Now,
             LastPlayed = DateTime.MinValue,
-            PlaybackMode = PlaylistPlaybackMode.StopAfterCurrent
+            PlaybackMode = defaultPlaybackMode,
+            IsCompleted = false
         };
 
         var ordinal = 0;
@@ -250,4 +256,5 @@ public class PlaylistService
         _context.SaveChanges();
         return true;
     }
+
 }

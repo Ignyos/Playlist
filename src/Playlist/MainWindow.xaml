@@ -4,11 +4,13 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Playlist"
+        xmlns:models="clr-namespace:Playlist.Models"
         mc:Ignorable="d"
         Title="Playlist" Height="600" Width="900" MinHeight="400" MinWidth="600"
         Icon="pack://application:,,,/Assets/icon.ico"
         KeyDown="MainWindow_KeyDown">
     <Window.Resources>
+        <local:CompletedGroupHeaderVisibilityConverter x:Key="CompletedGroupHeaderVisibilityConverter" />
         <Style TargetType="ListBoxItem">
             <Setter Property="Template">
                 <Setter.Value>
@@ -71,7 +73,7 @@
                 <DockPanel>
                     <!-- Search and Sort Controls -->
                     <DockPanel DockPanel.Dock="Top" Margin="10">
-                        <Button Name="SortMenuButton" DockPanel.Dock="Left" Width="30" Height="30" Margin="0,0,5,0" Content="☰" Click="SortMenu_Click">
+                        <Button Name="SortMenuButton" DockPanel.Dock="Left" Width="30" Height="30" Margin="0,0,5,0" Content="☰" Click="SortMenu_Click" Visibility="Collapsed">
                             <Button.ContextMenu>
                                 <ContextMenu Name="SortContextMenu">
                                     <MenuItem Header="Sort by create date">
@@ -95,12 +97,20 @@
                     <!-- Playlists List -->
                     <ListBox Name="PlaylistsListBox" Margin="10,0,10,10" Background="White"
                              DisplayMemberPath="DisplayText"
-                             AllowDrop="True" 
                              ContextMenuOpening="PlaylistsListBox_ContextMenuOpening"
-                             PreviewMouseLeftButtonDown="Playlist_PreviewMouseLeftButtonDown"
-                             MouseMove="Playlist_MouseMove"
-                             DragOver="Playlist_DragOver"
-                             Drop="Playlist_Drop">
+                             PreviewMouseRightButtonDown="PlaylistsListBox_PreviewMouseRightButtonDown">
+                        <ListBox.GroupStyle>
+                            <GroupStyle>
+                                <GroupStyle.HeaderTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="0,8,0,4" Padding="8,4" Background="#EEF2F7" BorderBrush="#D6DCE5" BorderThickness="0,0,0,1"
+                                                Visibility="{Binding Name, Converter={StaticResource CompletedGroupHeaderVisibilityConverter}}">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="#334155" />
+                                        </Border>
+                                    </DataTemplate>
+                                </GroupStyle.HeaderTemplate>
+                            </GroupStyle>
+                        </ListBox.GroupStyle>
                         <ListBox.Resources>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="Template">
@@ -134,7 +144,33 @@
                         <ListBox.ContextMenu>
                             <ContextMenu x:Name="PlaylistsItemContextMenu">
                                 <MenuItem Header="Edit" Click="EditPlaylist_Click" />
-                                <MenuItem Header="Playback Mode" Click="PlaylistDetails_Click" />
+                                <MenuItem Header="Playback Mode">
+                                    <MenuItem x:Name="StopAfterCurrentPlaybackModeMenuItem"
+                                              Header="Stop after current item"
+                                              Tag="{x:Static models:PlaylistPlaybackMode.StopAfterCurrent}"
+                                              ToolTip="Playback stops when the current item finishes."
+                                              Click="PlaylistPlaybackModeMenuItem_Click" />
+                                    <MenuItem x:Name="SequentialAutoNextPlaybackModeMenuItem"
+                                              Header="Auto-play next"
+                                              Tag="{x:Static models:PlaylistPlaybackMode.SequentialAutoNext}"
+                                              ToolTip="Automatically plays the next item in playlist order."
+                                              Click="PlaylistPlaybackModeMenuItem_Click" />
+                                    <MenuItem x:Name="SequentialAutoNextLoopPlaybackModeMenuItem"
+                                              Header="Auto-play next and loop"
+                                              Tag="{x:Static models:PlaylistPlaybackMode.SequentialAutoNextLoop}"
+                                              ToolTip="Automatically plays the next item and loops back to the first item after the last."
+                                              Click="PlaylistPlaybackModeMenuItem_Click" />
+                                    <MenuItem x:Name="ShuffleContinuousPlaybackModeMenuItem"
+                                              Header="Shuffle continuous"
+                                              Tag="{x:Static models:PlaylistPlaybackMode.ShuffleContinuous}"
+                                              ToolTip="Keeps playing random items and can repeat previously played items."
+                                              Click="PlaylistPlaybackModeMenuItem_Click" />
+                                    <MenuItem x:Name="ShufflePlayOncePlaybackModeMenuItem"
+                                              Header="Shuffle play-once"
+                                              Tag="{x:Static models:PlaylistPlaybackMode.ShufflePlayOnce}"
+                                              ToolTip="Plays items in random order without repeats until all items are played, then stops."
+                                              Click="PlaylistPlaybackModeMenuItem_Click" />
+                                </MenuItem>
                                 <MenuItem Header="Remove" Click="RemovePlaylist_Click" />
                             </ContextMenu>
                         </ListBox.ContextMenu>
@@ -211,7 +247,9 @@
                         <ContextMenu>
                             <MenuItem Header="Play From Beginning" Click="PlayItem_Click" />
                             <MenuItem Header="Continue" Click="ContinueItem_Click" />
+                            <Separator />
                             <MenuItem Header="Mark as Completed" Click="MarkItemCompleted_Click" />
+                            <MenuItem Header="Mark as Unwatched" Click="MarkItemUnwatched_Click" />
                             <Separator />
                             <MenuItem Header="Rename" Click="RenameItem_Click" />
                             <MenuItem Header="Remove" Click="RemoveItem_Click" />

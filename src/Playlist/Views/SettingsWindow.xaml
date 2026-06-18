@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="clr-namespace:Playlist.Models"
         mc:Ignorable="d"
         Title="Settings" Height="500" Width="800" MinHeight="400" MinWidth="600"
         Icon="/Assets/icon.ico"
@@ -26,6 +27,19 @@
                     <RadioButton Name="FullscreenAutoRadio" Content="Enter fullscreen automatically on play" GroupName="FullscreenBehavior" Checked="FullscreenBehavior_Changed" Margin="0,0,0,6" />
                     <RadioButton Name="FullscreenDefaultRadio" Content="Play at default video size" GroupName="FullscreenBehavior" Checked="FullscreenBehavior_Changed" />
                 </StackPanel>
+            </StackPanel>
+
+            <StackPanel Orientation="Vertical" Margin="0,0,0,20">
+                <TextBlock Text="Default Playback Mode for New Playlists" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8" />
+                <ComboBox Name="DefaultPlaybackModeComboBox"
+                          SelectionChanged="DefaultPlaybackModeComboBox_SelectionChanged"
+                          MinWidth="280">
+                    <ComboBoxItem Tag="{x:Static models:PlaylistPlaybackMode.StopAfterCurrent}">Stop after current item</ComboBoxItem>
+                    <ComboBoxItem Tag="{x:Static models:PlaylistPlaybackMode.SequentialAutoNext}">Auto-play next</ComboBoxItem>
+                    <ComboBoxItem Tag="{x:Static models:PlaylistPlaybackMode.SequentialAutoNextLoop}">Auto-play next and loop</ComboBoxItem>
+                    <ComboBoxItem Tag="{x:Static models:PlaylistPlaybackMode.ShuffleContinuous}">Shuffle continuous</ComboBoxItem>
+                    <ComboBoxItem Tag="{x:Static models:PlaylistPlaybackMode.ShufflePlayOnce}">Shuffle play-once</ComboBoxItem>
+                </ComboBox>
             </StackPanel>
         </StackPanel>
     </ScrollViewer>
