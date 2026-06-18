@@ -120,6 +120,7 @@ public partial class MainWindow : Window
     private readonly Random _random = new();
     private readonly HashSet<int> _shufflePlayOncePlayedItemIds = [];
     private int? _shufflePlayOncePlaylistId;
+    private bool _isPlaylistDoubleClickPlayInProgress;
 
     public MainWindow()
     {
@@ -405,6 +406,125 @@ public partial class MainWindow : Window
             var service = new PlaylistService(context);
             service.UpdatePlaylistSelectedItem(_selectedPlaylist.Id, selectedItem?.Id);
         }
+    }
+
+    private void PlaylistsListBox_DoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (_isPlaylistDoubleClickPlayInProgress)
+        {
+            e.Handled = true;
+            return;
+        }
+
+        if (sender is not ListBox listBox)
+        {
+            return;
+        }
+
+        var clickedElement = e.OriginalSource as DependencyObject;
+        var clickedItem = ItemsControl.ContainerFromElement(listBox, clickedElement) as ListBoxItem;
+        if (clickedItem?.DataContext is not PlaylistViewModel selectedPlaylist)
+        {
+            return;
+        }
+
+        _isPlaylistDoubleClickPlayInProgress = true;
+
+        try
+        {
+            if (!ReferenceEquals(listBox.SelectedItem, selectedPlaylist))
+            {
+                listBox.SelectedItem = selectedPlaylist;
+            }
+
+            using var context = _dbContextFactory.CreateDbContext();
+            var service = new PlaylistService(context);
+            var playlist = service.GetPlaylistById(selectedPlaylist.Id);
+            if (playlist == null)
+            {
+                return;
+            }
+
+            var orderedItems = playlist.Items
+                .Where(i => i.DeleteDate == null)
+                .OrderBy(i => i.Ordinal)
+                .ToList();
+
+            var startItem = SelectStartItemForMode(playlist, orderedItems);
+            if (startItem == null)
+            {
+                MessageBox.Show("No playable items were found in this playlist.", "No Playable Items", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var viewModelItem = _playlistItems.FirstOrDefault(i => i.Id == startItem.Id);
+            if (viewModelItem == null)
+            {
+                LoadPlaylistItems(selectedPlaylist.Id);
+                viewModelItem = _playlistItems.FirstOrDefault(i => i.Id == startItem.Id);
+            }
+
+            if (viewModelItem == null)
+            {
+                MessageBox.Show("The selected playlist item could not be loaded.", "Playback Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            PlaylistItemsListBox.SelectedItem = viewModelItem;
+            PlaylistItemsListBox.ScrollIntoView(viewModelItem);
+
+            var fromStart = ShouldStartFromBeginning(startItem.TimeStamp, startItem.Duration);
+            PlayMedia(viewModelItem, fromStart);
+            e.Handled = true;
+        }
+        finally
+        {
+            _isPlaylistDoubleClickPlayInProgress = false;
+        }
+    }
+
+    private Models.PlaylistItem? SelectStartItemForMode(Models.Playlist playlist, List<Models.PlaylistItem> orderedItems)
+    {
+        if (orderedItems.Count == 0)
+        {
+            return null;
+        }
+
+        var playableItems = orderedItems
+            .Where(i => File.Exists(i.Path))
+            .ToList();
+
+        if (playableItems.Count == 0)
+        {
+            return null;
+        }
+
+        var selectedPlayableItem = playlist.SelectedItemId.HasValue
+            ? playableItems.FirstOrDefault(i => i.Id == playlist.SelectedItemId.Value)
+            : null;
+
+        return playlist.PlaybackMode switch
+        {
+            Models.PlaylistPlaybackMode.StopAfterCurrent => selectedPlayableItem ?? playableItems[0],
+            Models.PlaylistPlaybackMode.SequentialAutoNext => selectedPlayableItem ?? playableItems[0],
+            Models.PlaylistPlaybackMode.SequentialAutoNextLoop => selectedPlayableItem ?? playableItems[0],
+            Models.PlaylistPlaybackMode.ShuffleContinuous => playableItems[_random.Next(playableItems.Count)],
+            Models.PlaylistPlaybackMode.ShufflePlayOnce => SelectShufflePlayOnceStart(playableItems, playlist.Id),
+            _ => playableItems[0]
+        };
+    }
+
+    private Models.PlaylistItem? SelectShufflePlayOnceStart(List<Models.PlaylistItem> playableItems, int playlistId)
+    {
+        if (playableItems.Count == 0)
+        {
+            return null;
+        }
+
+        // Explicit user start action should begin a fresh shuffle-play-once session.
+        ResetShufflePlayOnceSession(playlistId);
+
+        return playableItems[_random.Next(playableItems.Count)];
     }
 
     private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -1046,20 +1166,27 @@ public partial class MainWindow : Window
         var item = PlaylistItemsListBox.SelectedItem as PlaylistItemViewModel;
         if (item == null) return;
 
-        // If there's a saved timestamp, check if it's at 100% (completed)
         using var context = _dbContextFactory.CreateDbContext();
         var dbItem = context.PlaylistItems.FirstOrDefault(i => i.Id == item.Id);
-        
-        bool isAtCompletion = false;
-        if (dbItem?.TimeStamp != null && dbItem.TimeStamp > 0 && dbItem.Duration.HasValue && dbItem.Duration > 0)
+
+        PlayMedia(item, fromStart: ShouldStartFromBeginning(dbItem?.TimeStamp, dbItem?.Duration));
+    }
+
+    private static bool ShouldStartFromBeginning(int? timeStampSeconds, long? durationMilliseconds)
+    {
+        if (!timeStampSeconds.HasValue || timeStampSeconds.Value <= 0)
         {
-            var timeStampMs = dbItem.TimeStamp.Value * 1000L;
-            int progress = (int)((timeStampMs * 100) / dbItem.Duration.Value);
-            isAtCompletion = progress >= 100;
+            return true;
         }
 
-        // Start from beginning if at completion, otherwise continue from timestamp
-        PlayMedia(item, fromStart: isAtCompletion || (dbItem?.TimeStamp == null || dbItem.TimeStamp == 0));
+        if (!durationMilliseconds.HasValue || durationMilliseconds.Value <= 0)
+        {
+            return false;
+        }
+
+        var timeStampMs = timeStampSeconds.Value * 1000L;
+        var progress = (int)((timeStampMs * 100) / durationMilliseconds.Value);
+        return progress >= 100;
     }
 
     private async void PlayMedia(PlaylistItemViewModel item, bool fromStart)

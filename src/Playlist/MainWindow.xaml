@@ -97,6 +97,7 @@
                     <!-- Playlists List -->
                     <ListBox Name="PlaylistsListBox" Margin="10,0,10,10" Background="White"
                              DisplayMemberPath="DisplayText"
+                             MouseDoubleClick="PlaylistsListBox_DoubleClick"
                              ContextMenuOpening="PlaylistsListBox_ContextMenuOpening"
                              PreviewMouseRightButtonDown="PlaylistsListBox_PreviewMouseRightButtonDown">
                         <ListBox.GroupStyle>
