@@ -206,6 +206,16 @@ public partial class MainWindow : Window
         var downloadUrl = _settingService.GetLastKnownUpdateDownloadUrl();
         var latestVersion = _settingService.GetLastKnownUpdateVersion();
 
+        if (isAvailable
+            && TryParseVersionToken(_updateService.GetCurrentVersion(), out var currentParsed)
+            && TryParseVersionToken(latestVersion, out var latestParsed)
+            && currentParsed >= latestParsed)
+        {
+            _settingService.SetLastKnownUpdateStatus(false, string.Empty, string.Empty);
+            SetUpdateNoticeVisible(false, string.Empty, string.Empty);
+            return;
+        }
+
         if (isAvailable && !string.IsNullOrWhiteSpace(downloadUrl))
         {
             SetUpdateNoticeVisible(true, downloadUrl, latestVersion);
@@ -1381,18 +1391,40 @@ public partial class MainWindow : Window
 
     private async void UpdateNotice_Click(object sender, RoutedEventArgs e)
     {
-        if (_isInlineUpdateDownloadRunning || string.IsNullOrWhiteSpace(_inlineUpdateDownloadUrl))
+        if (_isInlineUpdateDownloadRunning)
         {
             return;
         }
 
         _isInlineUpdateDownloadRunning = true;
-        UpdateNoticeMenuItem.Header = "Downloading update...";
+        UpdateNoticeMenuItem.Header = "Checking latest update...";
         UpdateNoticeMenuItem.IsEnabled = false;
 
         try
         {
-            var installerPath = await _updateService.DownloadInstallerAsync(_inlineUpdateDownloadUrl);
+            var result = await _updateService.CheckForUpdatesAsync();
+            if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+            {
+                _isInlineUpdateDownloadRunning = false;
+                SetUpdateNoticeVisible(true, _inlineUpdateDownloadUrl, _settingService.GetLastKnownUpdateVersion());
+                MessageBox.Show(result.ErrorMessage, "Update Check Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (!result.IsUpdateAvailable || string.IsNullOrWhiteSpace(result.DownloadUrl))
+            {
+                _settingService.SetLastKnownUpdateStatus(false, string.Empty, string.Empty);
+                SetUpdateNoticeVisible(false, string.Empty, string.Empty);
+                _isInlineUpdateDownloadRunning = false;
+                MessageBox.Show("You are already on the latest version.", "Up To Date", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            _settingService.SetLastKnownUpdateStatus(true, result.LatestVersion, result.DownloadUrl);
+            _inlineUpdateDownloadUrl = result.DownloadUrl;
+
+            UpdateNoticeMenuItem.Header = "Downloading update...";
+            var installerPath = await _updateService.DownloadInstallerAsync(result.DownloadUrl);
 
             Process.Start(new ProcessStartInfo
             {
@@ -1408,6 +1440,30 @@ public partial class MainWindow : Window
             SetUpdateNoticeVisible(true, _inlineUpdateDownloadUrl, _settingService.GetLastKnownUpdateVersion());
             MessageBox.Show($"Unable to download or start the installer: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
+    }
+
+    private static bool TryParseVersionToken(string input, out Version version)
+    {
+        version = new Version(0, 0, 0);
+
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return false;
+        }
+
+        var match = System.Text.RegularExpressions.Regex.Match(input, @"\d+(?:\.\d+){1,3}");
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        if (!Version.TryParse(match.Value, out var parsed) || parsed == null)
+        {
+            return false;
+        }
+
+        version = parsed;
+        return true;
     }
 
     private void OpenUrl(string url)
