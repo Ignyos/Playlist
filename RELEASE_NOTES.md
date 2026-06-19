@@ -1,27 +1,29 @@
-# Release v1.3.1
+﻿# Release v1.4.0
 
 ## Overview
-This release focuses on stability and recovery for playback mode workflows and startup database initialization. It also improves local development testing setup with scenario-based launch profiles in VS Code.
+This release focuses on faster day-to-day playback control, clearer playlist organization, and more reliable update detection. It adds quality-of-life features for managing progress and startup behavior while improving how the app identifies the newest installable version.
 
 ## New Features
-- **Database Self-Repair on Startup**: Adds in-place schema repair that can create missing core tables, columns, and indexes when a local database is incomplete.
-- **VS Code Scenario Launch Profiles**: Adds one-click launch profiles for normal run, clean/new database testing, and existing database upgrade testing.
+- **Queue and Completed Playlist Sections**: Adds persistent playlist states so active and completed playlists are shown in separate sections for easier organization.
+- **Playlist Double-Click Playback**: Double-clicking a playlist now starts playback automatically using that playlist's selected playback mode.
+- **Default Playback Mode Setting**: Adds a new Settings option to choose the default playback mode applied to newly created playlists.
+- **Mark as Unwatched Action**: Adds a playlist item context-menu action to reset an item's progress back to zero.
 
 ## Improvements
-- **Safer Database Recovery**: Improves startup behavior to repair missing schema elements in place instead of deleting the whole database by default.
-- **Developer Testing Workflow**: Adds reusable backup/remove database tasks and scenario orchestration tasks to speed regression testing.
-- **Testing Documentation**: Adds a dedicated development testing checklist with scenario guidance and verification points.
+- **Playback Mode Editing Flow**: Replaces the old Playback Mode dialog with a direct context-menu submenu so users can change modes in fewer clicks.
+- **Playback Mode Guidance**: Adds mode descriptions as tooltips directly in the Playback Mode submenu.
+- **Playlist Sorting Behavior**: Orders playlists alphabetically within each section (incomplete first, completed second) for more predictable scanning.
+- **Cleaner Playlist Context Menu**: Streamlines the playlist context menu to the core actions: Edit, Playback Mode, and Remove.
 
 ## Bug Fixes
-- **Playback Mode Threading Crash**: Fixes cross-thread UI access in playback continuation flow when using modes other than Stop after current item.
-- **Media Ended Continuation Safety**: Wraps async media-ended continuation with exception safety to prevent process-terminating unhandled exceptions.
-- **Startup Initialization Failures**: Fixes startup failures caused by missing Playlists and related schema objects in partially initialized local databases.
+- **Update Detection Accuracy**: Fixes cases where update checks could miss the most recent installable release when multiple releases are available.
+- **Stale Version Notice Handling**: Fixes scenarios where the app could still show an update notice after you already installed a newer version.
+- **Inline Update Download Freshness**: Fixes cases where the update notice could use stale cached data and download an older installer URL.
 
 ## Technical Changes
-- Added dispatcher marshaling for UI-touching operations in playback auto-advance flow.
-- Added guarded async error handling in media-ended event continuation.
-- Added startup schema verification and repair helpers for required tables, columns, and indexes.
-- Added VS Code tasks for local DB backup/reset and scenario-driven launch orchestration.
+- **Release Selection Logic**: Update checks now evaluate a broader release list and choose the newest valid installer-backed release.
+- **Data Model Updates**: Adds playlist state fields to support sectioned playlist organization.
+- **Legacy UI Cleanup**: Removes obsolete Playback Mode window files after migrating to in-menu mode selection.
 
 ## Breaking Changes (if any)
 - None.
@@ -34,4 +36,5 @@ This release focuses on stability and recovery for playback mode workflows and s
 - .NET 9.0 Runtime (included in installer)
 
 ## Documentation
-- Full documentation available at https://playlist.ignyos.com/
+- Full documentation: https://playlist.ignyos.com/
+
