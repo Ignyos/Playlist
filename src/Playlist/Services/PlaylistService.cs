@@ -257,4 +257,17 @@ public class PlaylistService
         return true;
     }
 
+    public bool UpdatePlaylistCompletedState(int playlistId, bool isCompleted)
+    {
+        var playlist = _context.Playlists.Find(playlistId);
+        if (playlist == null || playlist.DeleteDate != null)
+        {
+            return false;
+        }
+
+        playlist.IsCompleted = isCompleted;
+        _context.SaveChanges();
+        return true;
+    }
+
 }

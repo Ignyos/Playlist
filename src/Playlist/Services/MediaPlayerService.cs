@@ -17,7 +17,6 @@ namespace Playlist.Services
         private readonly IPlaylistDbContextFactory _dbContextFactory;
         private readonly SemaphoreSlim _dbLock = new SemaphoreSlim(1, 1);
         private PlaylistItem? _currentItem;
-        private DateTime? _playbackStartTime;
         private DateTime _lastTimestampSave = DateTime.MinValue;
         private static readonly TimeSpan TimestampSaveInterval = TimeSpan.FromMilliseconds(250);
         private bool _disposed;
@@ -62,7 +61,6 @@ namespace Playlist.Services
                 await StopAsync();
 
                 _currentItem = item;
-                _playbackStartTime = DateTime.Now;
 
                 // Create media from file
                 using var media = new Media(_libVLC, item.Path, FromType.FromPath);
@@ -179,7 +177,6 @@ namespace Playlist.Services
                 }
 
                 _currentItem = null;
-                _playbackStartTime = null;
             }
         }
 
@@ -215,9 +212,6 @@ namespace Playlist.Services
 
             try
             {
-                // Log to history
-                await LogHistoryAsync(_currentItem);
-
                 // Keep timestamp at duration (100%) since playback completed
                 await _dbLock.WaitAsync();
                 try
@@ -256,7 +250,6 @@ namespace Playlist.Services
 
                 var endedItem = _currentItem;
                 _currentItem = null;
-                _playbackStartTime = null;
 
                 MediaEnded?.Invoke(this, endedItem);
             }
@@ -300,36 +293,6 @@ namespace Playlist.Services
                 {
                     _dbLock.Release();
                 }
-            }
-        }
-
-        private async Task LogHistoryAsync(PlaylistItem item)
-        {
-            try
-            {
-                await _dbLock.WaitAsync();
-                try
-                {
-                    using var context = _dbContextFactory.CreateDbContext();
-                    var history = new History
-                    {
-                        PlaylistId = item.PlaylistId,
-                        PlaylistItemId = item.Id,
-                        TimeStamp = _playbackStartTime ?? DateTime.Now
-                    };
-
-                    context.History.Add(history);
-                    await context.SaveChangesAsync();
-                }
-                finally
-                {
-                    _dbLock.Release();
-                }
-            }
-            catch (Exception ex)
-            {
-                // Log the error but don't throw
-                await LogErrorAsync(item, $"Failed to log history: {ex.Message}", ex.StackTrace);
             }
         }
 

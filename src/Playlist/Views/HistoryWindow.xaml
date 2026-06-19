@@ -8,9 +8,20 @@
         Icon="/Assets/icon.ico"
         WindowStartupLocation="CenterOwner">
     <DockPanel Margin="10">
-        <!-- Close Button -->
-        <Button DockPanel.Dock="Bottom" Content="Close" Width="80" Height="30" 
-                Margin="0,10,0,0" HorizontalAlignment="Right" Click="Close_Click" />
+        <StackPanel DockPanel.Dock="Bottom"
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                Margin="0,10,0,0">
+            <Button Content="Clear History"
+                Width="110"
+                Height="30"
+                Margin="0,0,8,0"
+                Click="ClearHistory_Click" />
+            <Button Content="Close"
+                Width="80"
+                Height="30"
+                Click="Close_Click" />
+        </StackPanel>
 
         <!-- History List -->
         <DataGrid Name="HistoryDataGrid" AutoGenerateColumns="False" 

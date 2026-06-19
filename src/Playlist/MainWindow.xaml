@@ -172,6 +172,10 @@
                                               ToolTip="Plays items in random order without repeats until all items are played, then stops."
                                               Click="PlaylistPlaybackModeMenuItem_Click" />
                                 </MenuItem>
+                                <Separator />
+                                <MenuItem x:Name="MarkPlaylistCompletedMenuItem" Header="Move to Completed" Click="MarkPlaylistCompleted_Click" />
+                                <MenuItem x:Name="MarkPlaylistUnwatchedMenuItem" Header="Move to Queue" Click="MarkPlaylistUnwatched_Click" />
+                                <Separator />
                                 <MenuItem Header="Remove" Click="RemovePlaylist_Click" />
                             </ContextMenu>
                         </ListBox.ContextMenu>

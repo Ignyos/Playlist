@@ -1,5 +1,4 @@
 using System;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using Microsoft.EntityFrameworkCore;
@@ -62,6 +61,33 @@ public partial class HistoryWindow : Window
     private void Close_Click(object sender, RoutedEventArgs e)
     {
         Close();
+    }
+
+    private void ClearHistory_Click(object sender, RoutedEventArgs e)
+    {
+        var result = MessageBox.Show(
+            "Clear all playback history entries? This action cannot be undone.",
+            "Clear History",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (result != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        try
+        {
+            using var context = _dbContextFactory.CreateDbContext();
+            context.History.RemoveRange(context.History);
+            context.SaveChanges();
+            LoadHistory();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error clearing history: {ex.Message}", "Error",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 }
 

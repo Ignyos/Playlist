@@ -976,6 +976,9 @@ public partial class MainWindow : Window
                 playbackModeItem.IsChecked = mode == selectedPlaylist.PlaybackMode;
             }
         }
+
+        MarkPlaylistCompletedMenuItem.IsEnabled = !selectedPlaylist.IsCompleted;
+        MarkPlaylistUnwatchedMenuItem.IsEnabled = selectedPlaylist.IsCompleted;
     }
 
     private PlaylistViewModel? GetContextMenuTargetPlaylist()
@@ -1056,6 +1059,47 @@ public partial class MainWindow : Window
             {
                 MessageBox.Show($"Error removing playlist: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+    }
+
+    private void MarkPlaylistCompleted_Click(object sender, RoutedEventArgs e)
+    {
+        UpdatePlaylistCompletedState(true);
+    }
+
+    private void MarkPlaylistUnwatched_Click(object sender, RoutedEventArgs e)
+    {
+        UpdatePlaylistCompletedState(false);
+    }
+
+    private void UpdatePlaylistCompletedState(bool isCompleted)
+    {
+        var targetPlaylist = GetContextMenuTargetPlaylist();
+        if (targetPlaylist == null)
+        {
+            MessageBox.Show("Please select a playlist first.", "No Selection", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        try
+        {
+            using var context = _dbContextFactory.CreateDbContext();
+            var service = new PlaylistService(context);
+            var updated = service.UpdatePlaylistCompletedState(targetPlaylist.Id, isCompleted);
+
+            if (!updated)
+            {
+                MessageBox.Show("The playlist could not be updated.", "Update Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            targetPlaylist.IsCompleted = isCompleted;
+            _playlistsView.Refresh();
+            ConfigurePlaylistContextMenu(targetPlaylist);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error updating playlist state: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
