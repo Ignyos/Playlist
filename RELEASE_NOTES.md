@@ -1,29 +1,24 @@
-﻿# Release v1.4.0
+﻿# Release v1.4.1
 
 ## Overview
-This release focuses on faster day-to-day playback control, clearer playlist organization, and more reliable update detection. It adds quality-of-life features for managing progress and startup behavior while improving how the app identifies the newest installable version.
+This release improves playlist state control and history management with faster, clearer actions in the main UI. It also fixes duplicate history logging so playback history is more accurate and easier to trust.
 
 ## New Features
-- **Queue and Completed Playlist Sections**: Adds persistent playlist states so active and completed playlists are shown in separate sections for easier organization.
-- **Playlist Double-Click Playback**: Double-clicking a playlist now starts playback automatically using that playlist's selected playback mode.
-- **Default Playback Mode Setting**: Adds a new Settings option to choose the default playback mode applied to newly created playlists.
-- **Mark as Unwatched Action**: Adds a playlist item context-menu action to reset an item's progress back to zero.
+- **Manual Playlist State Actions**: Adds playlist context menu actions to move a playlist to **Completed** or back to **Queue** without changing item progress.
+- **Clear History Action**: Adds a **Clear History** button in the History window with confirmation so you can quickly reset playback history when needed.
 
 ## Improvements
-- **Playback Mode Editing Flow**: Replaces the old Playback Mode dialog with a direct context-menu submenu so users can change modes in fewer clicks.
-- **Playback Mode Guidance**: Adds mode descriptions as tooltips directly in the Playback Mode submenu.
-- **Playlist Sorting Behavior**: Orders playlists alphabetically within each section (incomplete first, completed second) for more predictable scanning.
-- **Cleaner Playlist Context Menu**: Streamlines the playlist context menu to the core actions: Edit, Playback Mode, and Remove.
+- **Playlist Context Menu UX**: Keeps state actions visible where you already manage playlists, reducing clicks and avoiding extra dialogs.
+- **State-Aware Menu Actions**: Disables invalid actions automatically (for example, you cannot move an already completed playlist to Completed again).
+- **Cleaner History Window Footer**: Groups History actions in a simple bottom action row for easier access.
 
 ## Bug Fixes
-- **Update Detection Accuracy**: Fixes cases where update checks could miss the most recent installable release when multiple releases are available.
-- **Stale Version Notice Handling**: Fixes scenarios where the app could still show an update notice after you already installed a newer version.
-- **Inline Update Download Freshness**: Fixes cases where the update notice could use stale cached data and download an older installer URL.
+- **Duplicate History Entries**: Fixes an issue where a viewed item could create two history rows for one playback session.
+- **History Accuracy**: Ensures each playback produces a single history entry, making history timelines and troubleshooting more reliable.
 
 ## Technical Changes
-- **Release Selection Logic**: Update checks now evaluate a broader release list and choose the newest valid installer-backed release.
-- **Data Model Updates**: Adds playlist state fields to support sectioned playlist organization.
-- **Legacy UI Cleanup**: Removes obsolete Playback Mode window files after migrating to in-menu mode selection.
+- Simplifies playback history logging by removing the duplicate end-of-media history write path.
+- Adds a dedicated playlist service method for updating parent playlist completion state only.
 
 ## Breaking Changes (if any)
 - None.
