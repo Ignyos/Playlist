@@ -1,26 +1,21 @@
-﻿# Release v1.4.1
+﻿# Release v1.4.2
 
 ## Overview
-This release improves playlist state control and history management with faster, clearer actions in the main UI. It also fixes duplicate history logging so playback history is more accurate and easier to trust.
+This build contains no user-facing feature, improvement, or bug-fix changes based on the provided release-candidate diff. It serves as a packaging/verification release for version alignment.
 
 ## New Features
-- **Manual Playlist State Actions**: Adds playlist context menu actions to move a playlist to **Completed** or back to **Queue** without changing item progress.
-- **Clear History Action**: Adds a **Clear History** button in the History window with confirmation so you can quickly reset playback history when needed.
+- **No New Features**: This release does not introduce new end-user functionality.
 
 ## Improvements
-- **Playlist Context Menu UX**: Keeps state actions visible where you already manage playlists, reducing clicks and avoiding extra dialogs.
-- **State-Aware Menu Actions**: Disables invalid actions automatically (for example, you cannot move an already completed playlist to Completed again).
-- **Cleaner History Window Footer**: Groups History actions in a simple bottom action row for easier access.
+- **No User-Facing Improvements**: Existing workflows and UI behavior remain unchanged in this build.
 
 ## Bug Fixes
-- **Duplicate History Entries**: Fixes an issue where a viewed item could create two history rows for one playback session.
-- **History Accuracy**: Ensures each playback produces a single history entry, making history timelines and troubleshooting more reliable.
+- **No Reported Fixes in RC Diff**: No user-impacting defect fixes are included in the provided 1.4.2 diff artifact.
 
 ## Technical Changes
-- Simplifies playback history logging by removing the duplicate end-of-media history write path.
-- Adds a dedicated playlist service method for updating parent playlist completion state only.
+- No technical code changes are present in the provided release-candidate diff file.
 
-## Breaking Changes (if any)
+## Breaking Changes
 - None.
 
 ## Installation
@@ -31,5 +26,5 @@ This release improves playlist state control and history management with faster,
 - .NET 9.0 Runtime (included in installer)
 
 ## Documentation
-- Full documentation: https://playlist.ignyos.com/
+- Full documentation available at https://playlist.ignyos.com/
 
