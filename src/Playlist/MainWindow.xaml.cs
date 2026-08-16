@@ -484,7 +484,8 @@ public partial class MainWindow : Window
             PlaylistItemsListBox.ScrollIntoView(viewModelItem);
 
             var fromStart = ShouldStartFromBeginning(startItem.TimeStamp, startItem.Duration);
-            PlayMedia(viewModelItem, fromStart);
+            var resetShufflePlayOnceSession = playlist.PlaybackMode != Models.PlaylistPlaybackMode.ShufflePlayOnce;
+            PlayMedia(viewModelItem, fromStart, resetShufflePlayOnceSession);
             e.Handled = true;
         }
         finally
@@ -509,32 +510,152 @@ public partial class MainWindow : Window
             return null;
         }
 
-        var selectedPlayableItem = playlist.SelectedItemId.HasValue
-            ? playableItems.FirstOrDefault(i => i.Id == playlist.SelectedItemId.Value)
-            : null;
+        var anchorItem = ResolvePlaybackAnchor(playlist, playableItems);
 
         return playlist.PlaybackMode switch
         {
-            Models.PlaylistPlaybackMode.StopAfterCurrent => selectedPlayableItem ?? playableItems[0],
-            Models.PlaylistPlaybackMode.SequentialAutoNext => selectedPlayableItem ?? playableItems[0],
-            Models.PlaylistPlaybackMode.SequentialAutoNextLoop => selectedPlayableItem ?? playableItems[0],
-            Models.PlaylistPlaybackMode.ShuffleContinuous => playableItems[_random.Next(playableItems.Count)],
-            Models.PlaylistPlaybackMode.ShufflePlayOnce => SelectShufflePlayOnceStart(playableItems, playlist.Id),
+            Models.PlaylistPlaybackMode.StopAfterCurrent =>
+                SelectNextPlayableSequential(playableItems, anchorItem, wrapToStart: true),
+            Models.PlaylistPlaybackMode.SequentialAutoNext =>
+                SelectNextPlayableSequential(playableItems, anchorItem, wrapToStart: true),
+            Models.PlaylistPlaybackMode.SequentialAutoNextLoop =>
+                SelectNextPlayableSequential(playableItems, anchorItem, wrapToStart: true),
+            Models.PlaylistPlaybackMode.ShuffleContinuous =>
+                SelectRandomPlayableItemExcludingAnchor(playableItems, anchorItem),
+            Models.PlaylistPlaybackMode.ShufflePlayOnce =>
+                SelectShufflePlayOnceStart(playableItems, playlist.Id, anchorItem),
             _ => playableItems[0]
         };
     }
 
-    private Models.PlaylistItem? SelectShufflePlayOnceStart(List<Models.PlaylistItem> playableItems, int playlistId)
+    private Models.PlaylistItem? ResolvePlaybackAnchor(Models.Playlist playlist, List<Models.PlaylistItem> playableItems)
+    {
+        var selectedPlayableItem = playlist.SelectedItemId.HasValue
+            ? playableItems.FirstOrDefault(i => i.Id == playlist.SelectedItemId.Value)
+            : null;
+
+        if (selectedPlayableItem != null)
+        {
+            return selectedPlayableItem;
+        }
+
+        return SelectMostRecentPartialAnchor(playableItems);
+    }
+
+    private Models.PlaylistItem? SelectMostRecentPartialAnchor(List<Models.PlaylistItem> playableItems)
+    {
+        return playableItems
+            .Where(IsPartiallyViewed)
+            .OrderByDescending(i => i.LastPlayed)
+            .ThenBy(i => i.Ordinal)
+            .FirstOrDefault();
+    }
+
+    private static bool IsPartiallyViewed(Models.PlaylistItem item)
+    {
+        var progressPercentage = GetProgressPercentage(item.TimeStamp, item.Duration);
+        return progressPercentage > 0 && progressPercentage < 100;
+    }
+
+    private static int GetProgressPercentage(int? timeStampSeconds, long? durationMilliseconds)
+    {
+        if (!timeStampSeconds.HasValue || timeStampSeconds.Value <= 0)
+        {
+            return 0;
+        }
+
+        if (!durationMilliseconds.HasValue || durationMilliseconds.Value <= 0)
+        {
+            return 0;
+        }
+
+        var timeStampMs = timeStampSeconds.Value * 1000L;
+        if (timeStampMs >= durationMilliseconds.Value)
+        {
+            return 100;
+        }
+
+        return (int)((timeStampMs * 100) / durationMilliseconds.Value);
+    }
+
+    private static Models.PlaylistItem? SelectNextPlayableSequential(
+        List<Models.PlaylistItem> playableItems,
+        Models.PlaylistItem? anchorItem,
+        bool wrapToStart)
     {
         if (playableItems.Count == 0)
         {
             return null;
         }
 
-        // Explicit user start action should begin a fresh shuffle-play-once session.
-        ResetShufflePlayOnceSession(playlistId);
+        if (anchorItem == null)
+        {
+            return playableItems[0];
+        }
 
-        return playableItems[_random.Next(playableItems.Count)];
+        var anchorIndex = playableItems.FindIndex(i => i.Id == anchorItem.Id);
+        if (anchorIndex < 0)
+        {
+            return playableItems[0];
+        }
+
+        var nextIndex = anchorIndex + 1;
+        if (nextIndex < playableItems.Count)
+        {
+            return playableItems[nextIndex];
+        }
+
+        return wrapToStart ? playableItems[0] : null;
+    }
+
+    private Models.PlaylistItem SelectRandomPlayableItemExcludingAnchor(
+        List<Models.PlaylistItem> playableItems,
+        Models.PlaylistItem? anchorItem)
+    {
+        if (playableItems.Count == 1)
+        {
+            return playableItems[0];
+        }
+
+        var candidates = anchorItem == null
+            ? playableItems
+            : playableItems.Where(i => i.Id != anchorItem.Id).ToList();
+
+        if (candidates.Count == 0)
+        {
+            return playableItems[_random.Next(playableItems.Count)];
+        }
+
+        return candidates[_random.Next(candidates.Count)];
+    }
+
+    private Models.PlaylistItem? SelectShufflePlayOnceStart(
+        List<Models.PlaylistItem> playableItems,
+        int playlistId,
+        Models.PlaylistItem? anchorItem)
+    {
+        if (playableItems.Count == 0)
+        {
+            return null;
+        }
+
+        EnsureShufflePlayOnceSession(playlistId);
+
+        if (anchorItem != null)
+        {
+            _shufflePlayOncePlayedItemIds.Add(anchorItem.Id);
+        }
+
+        var remaining = playableItems
+            .Where(i => !_shufflePlayOncePlayedItemIds.Contains(i.Id))
+            .ToList();
+
+        if (remaining.Count == 0)
+        {
+            return null;
+        }
+
+        return remaining[_random.Next(remaining.Count)];
     }
 
     private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -1072,6 +1193,32 @@ public partial class MainWindow : Window
         UpdatePlaylistCompletedState(false);
     }
 
+    private void MarkAllPlaylistItemsUnwatched_Click(object sender, RoutedEventArgs e)
+    {
+        var targetPlaylist = GetContextMenuTargetPlaylist();
+        if (targetPlaylist == null)
+        {
+            MessageBox.Show("Please select a playlist first.", "No Selection", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        try
+        {
+            using var context = _dbContextFactory.CreateDbContext();
+            var service = new PlaylistService(context);
+            service.MarkAllPlaylistItemsUnwatched(targetPlaylist.Id);
+
+            if (_selectedPlaylist != null && _selectedPlaylist.Id == targetPlaylist.Id)
+            {
+                LoadPlaylistItems(targetPlaylist.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error marking playlist items as unwatched: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     private void UpdatePlaylistCompletedState(bool isCompleted)
     {
         var targetPlaylist = GetContextMenuTargetPlaylist();
@@ -1243,7 +1390,7 @@ public partial class MainWindow : Window
         return progress >= 100;
     }
 
-    private async void PlayMedia(PlaylistItemViewModel item, bool fromStart)
+    private async void PlayMedia(PlaylistItemViewModel item, bool fromStart, bool resetShufflePlayOnceSession = true)
     {
         try
         {
@@ -1266,8 +1413,11 @@ public partial class MainWindow : Window
             var playlistItem = playlistContext.PlaylistItems.FirstOrDefault(i => i.Id == item.Id);
             if (playlistItem == null) return;
 
-            // Explicit playback actions restart the shuffle play-once session for this playlist.
-            ResetShufflePlayOnceSession(item.PlaylistId);
+            // Explicit playback actions can restart the shuffle play-once session for this playlist.
+            if (resetShufflePlayOnceSession)
+            {
+                ResetShufflePlayOnceSession(item.PlaylistId);
+            }
 
             // Get all playlist items in order for navigation
             var allPlaylistItems = playlistContext.PlaylistItems

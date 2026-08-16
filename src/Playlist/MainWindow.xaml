@@ -175,6 +175,7 @@
                                 <Separator />
                                 <MenuItem x:Name="MarkPlaylistCompletedMenuItem" Header="Move to Completed" Click="MarkPlaylistCompleted_Click" />
                                 <MenuItem x:Name="MarkPlaylistUnwatchedMenuItem" Header="Move to Queue" Click="MarkPlaylistUnwatched_Click" />
+                                <MenuItem Header="Mark All Unwatched" Click="MarkAllPlaylistItemsUnwatched_Click" />
                                 <Separator />
                                 <MenuItem Header="Remove" Click="RemovePlaylist_Click" />
                             </ContextMenu>

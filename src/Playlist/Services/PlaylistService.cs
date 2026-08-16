@@ -199,6 +199,25 @@ public class PlaylistService
         }
     }
 
+    public void MarkAllPlaylistItemsUnwatched(int playlistId)
+    {
+        var items = _context.PlaylistItems
+            .Where(i => i.PlaylistId == playlistId && i.DeleteDate == null)
+            .ToList();
+
+        if (items.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var item in items)
+        {
+            item.TimeStamp = 0;
+        }
+
+        _context.SaveChanges();
+    }
+
     public void MarkPlaylistItemCompleted(int itemId)
     {
         var item = _context.PlaylistItems.Find(itemId);
