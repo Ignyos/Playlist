@@ -1,26 +1,25 @@
-﻿# Release v1.4.3
+﻿# Release v1.4.4
 
 ## Overview
-This release improves playlist playback flow so double-clicking a playlist starts the logical next video for the selected playback mode. It also adds a faster way to reset watch progress for an entire playlist.
+Playlist playback is more reliable in this release. It improves how items are selected and started, reduces accidental reordering, and fixes progress tracking so partially watched videos resume and display correctly.
 
 ## New Features
-- **Mark All Unwatched**: Adds a new playlist context menu action to reset all items in a playlist to unwatched in one click.
+- **No major new features**: This release focuses on playback reliability and behavior fixes rather than adding new user-facing commands.
 
 ## Improvements
-- **Playlist Double-Click Behavior**: Starts playback using mode-aware next-item logic instead of always starting the currently selected item.
-- **Smart Playback Anchor Selection**: Uses the saved selected/last-played item when available, and otherwise falls back to the most relevant partially viewed item.
-- **Sequential Start Consistency**: Starts from the next playable item and wraps to the beginning when needed to avoid dead-end starts.
-- **Shuffle Continuous Start Quality**: Prefers a random item that is different from the anchor when possible for better variety.
-- **Shuffle Play-Once Continuity**: Preserves the active play-once session when starting from playlist double-click so previously played items are respected.
+- **Playlist start selection**: Playlist playback now follows a more consistent start rule by respecting item order and choosing the next sensible item when a list contains both watched and unwatched videos.
+- **Drag-and-drop behavior**: Reordering is now more precise because dragging only starts from an actual playlist item, which makes accidental moves less likely.
+- **Playback stop flow**: Stopping or closing the player now uses the current visible playback position, which makes saved progress more accurate.
 
 ## Bug Fixes
-- **Playlist Double-Click No-Op Cases**: Fixes scenarios where start behavior could feel incorrect by consistently choosing a logical playable start item per mode.
-- **Shuffle Play-Once Session Reset Behavior**: Fixes unintended session resets during playlist-driven playback starts, reducing unexpected repeats.
+- **Incorrect 100% progress after stopping**: Fixed an issue where videos could appear fully watched even when playback stopped early, by refreshing stale stored duration values when the real media length is known.
+- **Accidental playlist reordering**: Fixed a bug where clicking empty space or interacting with a context menu could still trigger a drag operation and reorder items unexpectedly.
+- **Closing the media player**: Fixed playback shutdown behavior so the player closes cleanly without race conditions that could interfere with saved progress.
 
 ## Technical Changes
-- Added helper logic for playback anchor resolution, partial-progress evaluation, sequential next-item selection, and shuffle candidate selection.
-- Added a bulk playlist service operation to clear timestamps for all active items in a playlist.
-- Updated media start call flow to optionally preserve shuffle play-once session state for mode-specific starts.
+- Refined playlist item selection logic to use ordinal ordering and shared progress-aware rules across playback modes.
+- Added safeguards in playback shutdown handling to ignore late media-end events while stop/close cleanup is in progress.
+- Updated stored duration handling so synthetic completion values are replaced with real measured media lengths whenever possible.
 
 ## Breaking Changes
 - None.
@@ -30,8 +29,8 @@ This release improves playlist playback flow so double-clicking a playlist start
 
 ## Requirements
 - Windows 10/11 (64-bit)
-- .NET 9.0 Runtime (included in installer)
+- .NET 9.0 Runtime (included in the installer)
 
 ## Documentation
-- Full documentation available at https://playlist.ignyos.com/
+- Full documentation is available at https://playlist.ignyos.com/
 

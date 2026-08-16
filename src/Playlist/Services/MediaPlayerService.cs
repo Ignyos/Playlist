@@ -19,6 +19,7 @@ namespace Playlist.Services
         private PlaylistItem? _currentItem;
         private DateTime _lastTimestampSave = DateTime.MinValue;
         private static readonly TimeSpan TimestampSaveInterval = TimeSpan.FromMilliseconds(250);
+        private bool _isStopping;
         private bool _disposed;
 
         public event EventHandler<PlaylistItem>? MediaStarted;
@@ -80,8 +81,9 @@ namespace Playlist.Services
                         break;
                 }
                 
-                // Capture duration if not already stored
-                if ((!item.Duration.HasValue || item.Duration.Value == 0) && duration > 0)
+                // Capture duration if not already stored, or if a prior synthetic completion
+                // value (1000ms) is clearly wrong for the actual media length.
+                if (ShouldRefreshStoredDuration(item.Duration, duration))
                 {
                     await _dbLock.WaitAsync();
                     try
@@ -147,15 +149,22 @@ namespace Playlist.Services
             }
         }
 
-        public async Task StopAsync()
+        public async Task StopAsync(int? currentTimeSeconds = null)
         {
             if (_disposed || _currentItem == null) return;
             
             if (_mediaPlayer.IsPlaying)
             {
-                // Save current timestamp
-                var currentTimeSeconds = (int)(_mediaPlayer.Time / 1000);
-                
+                _isStopping = true;
+                var stoppingItem = _currentItem;
+                _currentItem = null;
+
+                // Prefer an explicit UI-provided timestamp, then the last known playback timestamp,
+                // and only fall back to the live player clock as a last resort.
+                var timestampSeconds = currentTimeSeconds
+                    ?? stoppingItem?.TimeStamp
+                    ?? (int)(_mediaPlayer.Time / 1000);
+
                 _mediaPlayer.Stop();
 
                 // Update timestamp in database
@@ -164,19 +173,18 @@ namespace Playlist.Services
                 {
                     using var context = _dbContextFactory.CreateDbContext();
                     var item = await context.PlaylistItems
-                        .FirstOrDefaultAsync(i => i.Id == _currentItem.Id);
+                        .FirstOrDefaultAsync(i => i.Id == stoppingItem!.Id);
                     if (item != null)
                     {
-                        item.TimeStamp = currentTimeSeconds;
+                        item.TimeStamp = timestampSeconds;
                         await context.SaveChangesAsync();
                     }
                 }
                 finally
                 {
                     _dbLock.Release();
+                    _isStopping = false;
                 }
-
-                _currentItem = null;
             }
         }
 
@@ -208,7 +216,7 @@ namespace Playlist.Services
 
         private async void OnMediaEnded(object? sender, EventArgs e)
         {
-            if (_currentItem == null) return;
+            if (_currentItem == null || _isStopping) return;
 
             try
             {
@@ -273,7 +281,7 @@ namespace Playlist.Services
         {
             // Periodically save timestamp (every 250ms)
             // Use non-blocking tryacquire: if a save is already in progress, skip this tick
-            if (_currentItem != null && (DateTime.Now - _lastTimestampSave) >= TimestampSaveInterval)
+            if (_currentItem != null && !_isStopping && (DateTime.Now - _lastTimestampSave) >= TimestampSaveInterval)
             {
                 if (!_dbLock.Wait(0)) return;
                 try
@@ -286,6 +294,7 @@ namespace Playlist.Services
                     if (item != null)
                     {
                         item.TimeStamp = currentTimeSeconds;
+                        _currentItem.TimeStamp = currentTimeSeconds;
                         await context.SaveChangesAsync();
                     }
                 }
@@ -325,6 +334,23 @@ namespace Playlist.Services
             {
                 // If we can't log the error, there's nothing more we can do
             }
+        }
+
+        private static bool ShouldRefreshStoredDuration(long? storedDuration, long measuredDuration)
+        {
+            if (measuredDuration <= 0)
+            {
+                return false;
+            }
+
+            if (!storedDuration.HasValue || storedDuration.Value <= 0)
+            {
+                return true;
+            }
+
+            // Duration=1000 is used as a synthetic completion marker when no real duration
+            // was known. Replace it as soon as we can measure the actual media length.
+            return storedDuration.Value <= 1000 && measuredDuration > 1000;
         }
 
         public void Dispose()

@@ -107,6 +107,7 @@ public partial class MainWindow : Window
     private PlaylistViewModel? _selectedPlaylist;
     private PlaylistViewModel? _contextMenuPlaylist;
     private Point _dragStartPoint;
+    private PlaylistItemViewModel? _draggedPlaylistItem;
     private ListBoxInsertionAdorner? _insertionAdorner;
     private int _dragTargetIndex = -1; // Track which item index we're dragging over
     private MediaPlayerService? _mediaPlayerService;
@@ -503,6 +504,7 @@ public partial class MainWindow : Window
 
         var playableItems = orderedItems
             .Where(i => File.Exists(i.Path))
+            .OrderBy(i => i.Ordinal)
             .ToList();
 
         if (playableItems.Count == 0)
@@ -510,51 +512,72 @@ public partial class MainWindow : Window
             return null;
         }
 
-        var anchorItem = ResolvePlaybackAnchor(playlist, playableItems);
+        var baseStartItem = SelectSharedPlaylistStartItem(playableItems);
+        if (baseStartItem != null)
+        {
+            return baseStartItem;
+        }
 
         return playlist.PlaybackMode switch
         {
             Models.PlaylistPlaybackMode.StopAfterCurrent =>
-                SelectNextPlayableSequential(playableItems, anchorItem, wrapToStart: true),
+                playableItems[0],
             Models.PlaylistPlaybackMode.SequentialAutoNext =>
-                SelectNextPlayableSequential(playableItems, anchorItem, wrapToStart: true),
+                playableItems[0],
             Models.PlaylistPlaybackMode.SequentialAutoNextLoop =>
-                SelectNextPlayableSequential(playableItems, anchorItem, wrapToStart: true),
+                playableItems[0],
             Models.PlaylistPlaybackMode.ShuffleContinuous =>
-                SelectRandomPlayableItemExcludingAnchor(playableItems, anchorItem),
+                SelectRandomPlayableItem(playableItems),
             Models.PlaylistPlaybackMode.ShufflePlayOnce =>
-                SelectShufflePlayOnceStart(playableItems, playlist.Id, anchorItem),
+                SelectShufflePlayOnceRandomPlayableItem(playableItems, playlist.Id),
             _ => playableItems[0]
         };
     }
 
-    private Models.PlaylistItem? ResolvePlaybackAnchor(Models.Playlist playlist, List<Models.PlaylistItem> playableItems)
+    private static Models.PlaylistItem? SelectSharedPlaylistStartItem(List<Models.PlaylistItem> playableItems)
     {
-        var selectedPlayableItem = playlist.SelectedItemId.HasValue
-            ? playableItems.FirstOrDefault(i => i.Id == playlist.SelectedItemId.Value)
-            : null;
-
-        if (selectedPlayableItem != null)
+        if (playableItems.Count == 0)
         {
-            return selectedPlayableItem;
+            return null;
         }
 
-        return SelectMostRecentPartialAnchor(playableItems);
+        var allFullyViewed = playableItems.All(IsFullyViewed);
+        if (allFullyViewed)
+        {
+            return null;
+        }
+
+        var allUnviewed = playableItems.All(IsUnviewed);
+        if (allUnviewed)
+        {
+            return null;
+        }
+
+        return playableItems.FirstOrDefault(i => !IsFullyViewed(i));
     }
 
-    private Models.PlaylistItem? SelectMostRecentPartialAnchor(List<Models.PlaylistItem> playableItems)
+    private Models.PlaylistItem SelectRandomPlayableItem(List<Models.PlaylistItem> playableItems)
     {
-        return playableItems
-            .Where(IsPartiallyViewed)
-            .OrderByDescending(i => i.LastPlayed)
-            .ThenBy(i => i.Ordinal)
-            .FirstOrDefault();
+        return playableItems[_random.Next(playableItems.Count)];
     }
 
-    private static bool IsPartiallyViewed(Models.PlaylistItem item)
+    private Models.PlaylistItem SelectShufflePlayOnceRandomPlayableItem(
+        List<Models.PlaylistItem> playableItems,
+        int playlistId)
     {
-        var progressPercentage = GetProgressPercentage(item.TimeStamp, item.Duration);
-        return progressPercentage > 0 && progressPercentage < 100;
+        EnsureShufflePlayOnceSession(playlistId);
+
+        var remaining = playableItems
+            .Where(i => !_shufflePlayOncePlayedItemIds.Contains(i.Id))
+            .ToList();
+
+        if (remaining.Count == 0)
+        {
+            ResetShufflePlayOnceSession(playlistId);
+            remaining = playableItems;
+        }
+
+        return SelectRandomPlayableItem(remaining);
     }
 
     private static int GetProgressPercentage(int? timeStampSeconds, long? durationMilliseconds)
@@ -578,84 +601,14 @@ public partial class MainWindow : Window
         return (int)((timeStampMs * 100) / durationMilliseconds.Value);
     }
 
-    private static Models.PlaylistItem? SelectNextPlayableSequential(
-        List<Models.PlaylistItem> playableItems,
-        Models.PlaylistItem? anchorItem,
-        bool wrapToStart)
+    private static bool IsUnviewed(Models.PlaylistItem item)
     {
-        if (playableItems.Count == 0)
-        {
-            return null;
-        }
-
-        if (anchorItem == null)
-        {
-            return playableItems[0];
-        }
-
-        var anchorIndex = playableItems.FindIndex(i => i.Id == anchorItem.Id);
-        if (anchorIndex < 0)
-        {
-            return playableItems[0];
-        }
-
-        var nextIndex = anchorIndex + 1;
-        if (nextIndex < playableItems.Count)
-        {
-            return playableItems[nextIndex];
-        }
-
-        return wrapToStart ? playableItems[0] : null;
+        return !item.TimeStamp.HasValue || item.TimeStamp.Value <= 0;
     }
 
-    private Models.PlaylistItem SelectRandomPlayableItemExcludingAnchor(
-        List<Models.PlaylistItem> playableItems,
-        Models.PlaylistItem? anchorItem)
+    private static bool IsFullyViewed(Models.PlaylistItem item)
     {
-        if (playableItems.Count == 1)
-        {
-            return playableItems[0];
-        }
-
-        var candidates = anchorItem == null
-            ? playableItems
-            : playableItems.Where(i => i.Id != anchorItem.Id).ToList();
-
-        if (candidates.Count == 0)
-        {
-            return playableItems[_random.Next(playableItems.Count)];
-        }
-
-        return candidates[_random.Next(candidates.Count)];
-    }
-
-    private Models.PlaylistItem? SelectShufflePlayOnceStart(
-        List<Models.PlaylistItem> playableItems,
-        int playlistId,
-        Models.PlaylistItem? anchorItem)
-    {
-        if (playableItems.Count == 0)
-        {
-            return null;
-        }
-
-        EnsureShufflePlayOnceSession(playlistId);
-
-        if (anchorItem != null)
-        {
-            _shufflePlayOncePlayedItemIds.Add(anchorItem.Id);
-        }
-
-        var remaining = playableItems
-            .Where(i => !_shufflePlayOncePlayedItemIds.Contains(i.Id))
-            .ToList();
-
-        if (remaining.Count == 0)
-        {
-            return null;
-        }
-
-        return remaining[_random.Next(remaining.Count)];
+        return GetProgressPercentage(item.TimeStamp, item.Duration) >= 100;
     }
 
     private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -805,11 +758,27 @@ public partial class MainWindow : Window
     private void PlaylistItem_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
         _dragStartPoint = e.GetPosition(null);
+
+        if (sender is not ListBox listBox)
+        {
+            _draggedPlaylistItem = null;
+            _dragTargetIndex = -1;
+            return;
+        }
+
+        var clickedElement = e.OriginalSource as DependencyObject;
+        var clickedItem = ItemsControl.ContainerFromElement(listBox, clickedElement) as ListBoxItem;
+        _draggedPlaylistItem = clickedItem?.DataContext as PlaylistItemViewModel;
+
+        if (_draggedPlaylistItem == null)
+        {
+            _dragTargetIndex = -1;
+        }
     }
 
     private void PlaylistItem_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
     {
-        if (e.LeftButton == System.Windows.Input.MouseButtonState.Pressed)
+        if (e.LeftButton == System.Windows.Input.MouseButtonState.Pressed && _draggedPlaylistItem != null)
         {
             Point currentPosition = e.GetPosition(null);
             Vector diff = _dragStartPoint - currentPosition;
@@ -818,13 +787,24 @@ public partial class MainWindow : Window
                 Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance)
             {
                 var listBox = sender as ListBox;
-                if (listBox?.SelectedItem is PlaylistItemViewModel item)
+                if (listBox != null)
                 {
-                    DataObject dragData = new DataObject(typeof(PlaylistItemViewModel), item);
+                    DataObject dragData = new DataObject(typeof(PlaylistItemViewModel), _draggedPlaylistItem);
                     RemoveInsertionAdorner(); // Clean up when drag ends
-                    DragDrop.DoDragDrop(listBox, dragData, DragDropEffects.Move);
+                    try
+                    {
+                        DragDrop.DoDragDrop(listBox, dragData, DragDropEffects.Move);
+                    }
+                    finally
+                    {
+                        _draggedPlaylistItem = null;
+                    }
                 }
             }
+        }
+        else if (e.LeftButton != System.Windows.Input.MouseButtonState.Pressed)
+        {
+            _draggedPlaylistItem = null;
         }
     }
 

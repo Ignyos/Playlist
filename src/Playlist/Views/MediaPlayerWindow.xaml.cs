@@ -18,6 +18,8 @@ namespace Playlist.Views
         private readonly DispatcherTimer _hideControlsTimer;
         private bool _isDraggingProgress;
         private bool _isFullScreen;
+        private bool _isClosing;
+        private bool _isCloseCleanupCompleted;
         private WindowState _previousWindowState;
         private WindowStyle _previousWindowStyle;
         private ResizeMode _previousResizeMode;
@@ -167,7 +169,7 @@ namespace Playlist.Views
             // Stop playback and save progress before closing the window
             if (_mediaPlayerService.IsPlaying)
             {
-                await _mediaPlayerService.StopAsync();
+                await _mediaPlayerService.StopAsync(GetCurrentPlaybackTimeSeconds());
             }
             
             // Now close the window (cleanup will be handled by Window_Closing)
@@ -219,17 +221,10 @@ namespace Playlist.Views
         {
             Dispatcher.Invoke(() =>
             {
-                if (!_controlsVisible)
-                {
-                    ControlsOverlay.Visibility = Visibility.Visible;
-                    var fadeIn = new DoubleAnimation
-                    {
-                        To = 1,
-                        Duration = TimeSpan.FromMilliseconds(200)
-                    };
-                    ControlsOverlay.BeginAnimation(OpacityProperty, fadeIn);
-                    _controlsVisible = true;
-                }
+                ControlsOverlay.BeginAnimation(OpacityProperty, null);
+                ControlsOverlay.Visibility = Visibility.Visible;
+                ControlsOverlay.Opacity = 1;
+                _controlsVisible = true;
                 
                 Mouse.OverrideCursor = null;
                 _hideControlsTimer.Stop();
@@ -261,6 +256,7 @@ namespace Playlist.Views
         {
             Dispatcher.Invoke(() =>
             {
+                ControlsOverlay.BeginAnimation(OpacityProperty, null);
                 if (_controlsVisible)
                 {
                     var fadeOut = new DoubleAnimation
@@ -382,15 +378,34 @@ namespace Playlist.Views
             UpdateNavigationButtons();
         }
 
+        private int GetCurrentPlaybackTimeSeconds()
+        {
+            return (int)Math.Floor(ProgressSlider.Value / 1000.0);
+        }
+
         private async void Window_Closing(object sender, CancelEventArgs e)
         {
+            if (_isCloseCleanupCompleted)
+            {
+                return;
+            }
+
+            if (_isClosing)
+            {
+                e.Cancel = true;
+                return;
+            }
+
+            e.Cancel = true;
+            _isClosing = true;
+
             // Restore cursor visibility before closing
             Mouse.OverrideCursor = null;
             
             // Stop playback if playing
             if (_mediaPlayerService.IsPlaying)
             {
-                await _mediaPlayerService.StopAsync();
+                await _mediaPlayerService.StopAsync(GetCurrentPlaybackTimeSeconds());
             }
 
             // Stop timers
@@ -410,8 +425,11 @@ namespace Playlist.Views
             // Dispose VideoView to close the ForegroundWindow overlay
             VideoView.Dispose();
             
-            // Allow the window to actually close now
-            // Don't call base.OnClosed as it will be called automatically
+            _isClosing = false;
+            _isCloseCleanupCompleted = true;
+
+            // Re-enter Close after cleanup so the second Closing event is allowed through.
+            _ = Dispatcher.BeginInvoke(new Action(Close));
         }
 
         protected override void OnClosed(EventArgs e)
